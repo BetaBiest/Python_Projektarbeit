@@ -1,6 +1,7 @@
-from tkinter import Tk, Menu, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, Checkbutton
-from tkinter.ttk import Combobox
 from pandastable import Table
+from tkinter import Tk, Menu, Frame, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, \
+    Checkbutton, E, W, X
+from tkinter.ttk import Combobox
 
 # from csvxmlImporter import CsvXmlImporter
 # list of encodings that can be detected by chardet
@@ -18,6 +19,7 @@ class Program:
         self.__settings = {}
 
         self.__root = Tk()
+        self.__root.minsize(560, 1)
         menu = Menu(self.__root)
         self.__root.config(menu=menu)
 
@@ -33,27 +35,29 @@ class Program:
 
         # ***---*** source file frame dialog ***---***
         srcfilesframe = LabelFrame(self.__root, text="Sourcefiles")
-        addbutton = Button(srcfilesframe,
+        buttonframe = Frame(srcfilesframe)
+        addbutton = Button(buttonframe,
                            text="Add Files",
                            command=self.add_files)
-        addbutton.pack()
-        removefilesbutton = Button(srcfilesframe,
+        addbutton.pack(fill=X)
+        removefilesbutton = Button(buttonframe,
                                    text="Remove Selected",
                                    command=self.remove_files)
-        removefilesbutton.pack()
-        removeallbutton = Button(srcfilesframe,
+        removefilesbutton.pack(fill=X)
+        removeallbutton = Button(buttonframe,
                                  text="Remove All",
                                  command=self.remove_all)
-        removeallbutton.pack()
+        removeallbutton.pack(fill=X)
+        buttonframe.grid(column=1, row=1)
         self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended")
-        self.__srcfileslistbox.pack()
-        Label(srcfilesframe, text="Encoding").pack()
+        self.__srcfileslistbox.grid(column=2, row=1)
+        Label(srcfilesframe, text="Encoding").grid(column=1, row=2, sticky=E)
         self.__settings["enc"] = StringVar()
         encCombobox = Combobox(srcfilesframe, textvariable=self.__settings["enc"], values=encodings, state="readonly")
         # TODO find better option for update
         encCombobox.bind("<FocusOut>", self.update_settings)
-        encCombobox.pack()
-        srcfilesframe.pack()
+        encCombobox.grid(column=2, row=2, pady=10)
+        srcfilesframe.pack(fill=X)
 
         # TODO implement xsl file dialog
         # ***---*** xsl file dialog ***---***
@@ -66,62 +70,61 @@ class Program:
                 # take only last input character and throw away the rest
                 entry_text.set(entry_text.get()[-1])
 
-        def make_radiobuttons(button_value, button_labels, command=lambda *_: None):
+        def make_radiobuttons(button_value, button_labels, c, r, command=lambda *_: None):
             if isinstance(button_labels, tuple) or isinstance(button_labels, list):
-                for item in button_labels:
+                for i, item in enumerate(button_labels):
                     Radiobutton(fileformatsettingsframe, text=item, variable=button_value,
-                                value=item, command=command).pack()
+                                value=item, command=command).grid(column=c + i, row=r, padx=10, sticky=W)
 
         fileformatsettingsframe = LabelFrame(self.__root, text="File Format Settings")
-        Label(fileformatsettingsframe, text="Separator").pack()
+        Label(fileformatsettingsframe, text="Separator").grid(column=1, row=1, sticky=E)
         self.__settings["separator"] = StringVar()
         seperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["separator"], width=1)
         self.__settings["separator"].trace("w", lambda *_: limit_character(self.__settings["separator"]))
         seperatorentry.bind("<Return>", self.update_settings)
         seperatorentry.bind("<FocusOut>", self.update_settings)
-        seperatorentry.pack()
-        Label(fileformatsettingsframe, text="Field separator").pack()
+        seperatorentry.grid(column=2, row=1, sticky=W, padx=15)
+        Label(fileformatsettingsframe, text="Field separator").grid(column=1, row=2, sticky=E)
         self.__settings["fieldseparator"] = StringVar()
         fieldseperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["fieldseparator"], width=1)
         self.__settings["fieldseparator"].trace("w", lambda *_: limit_character(self.__settings["fieldseparator"]))
         fieldseperatorentry.bind("<Return>", self.update_settings)
         fieldseperatorentry.bind("<FocusOut>", self.update_settings)
-        fieldseperatorentry.pack()
-        Label(fileformatsettingsframe, text="Marking of field separator in fields").pack()
+        fieldseperatorentry.grid(column=2, row=2, sticky=W, padx=15)
+        Label(fileformatsettingsframe, text="Marking of field separator in fields").grid(column=1, row=3, sticky=E)
         markingoptions = ("double", "mark")  # TODO eventually define this as global enum
         self.__settings["markingoption"] = StringVar()
         self.__settings["markingoption"].set(markingoptions[1])
-        make_radiobuttons(self.__settings["markingoption"], markingoptions, self.update_settings)
-        Label(fileformatsettingsframe, text="Marking sign").pack()
+        make_radiobuttons(self.__settings["markingoption"], markingoptions, 2, 3, self.update_settings)
+        Label(fileformatsettingsframe, text="Marking sign").grid(column=1, row=4, sticky=E)
         self.__settings["markingsign"] = StringVar()
         markingsignentry = Entry(fileformatsettingsframe, textvariable=self.__settings["markingsign"], width=1)
         self.__settings["markingsign"].trace("w", lambda *_: limit_character(self.__settings["markingsign"]))
         markingsignentry.bind("<Return>", self.update_settings)
         markingsignentry.bind("<FocusOut>", self.update_settings)
-        markingsignentry.pack()
-        Label(fileformatsettingsframe, text="Field marking mode").pack()
+        markingsignentry.grid(column=2, row=4, sticky=W, padx=15)
+        Label(fileformatsettingsframe, text="Field marking mode").grid(column=1, row=5, sticky=E)
         markingmodes = ("all", "minimal", "non numeric", "none")  # TODO eventually define this as global enum
         self.__settings["markingmode"] = StringVar()
         self.__settings["markingmode"].set(markingmodes[1])
-        make_radiobuttons(self.__settings["markingmode"], markingmodes, self.update_settings)
-        Label(fileformatsettingsframe, text="Ignore spaces at beginning").pack()
+        make_radiobuttons(self.__settings["markingmode"], markingmodes, 2, 5, self.update_settings)
+        Label(fileformatsettingsframe, text="Ignore spaces at beginning").grid(column=1, row=6, sticky=E)
         self.__settings["ignorespaces"] = BooleanVar()
         self.__settings["ignorespaces"].set(False)
         Checkbutton(fileformatsettingsframe, variable=self.__settings["ignorespaces"],
-                    command=self.update_settings).pack()
-        Label(fileformatsettingsframe, text="Headline present").pack()
+                    command=self.update_settings).grid(column=2, row=6, sticky=W, padx=10)
+        Label(fileformatsettingsframe, text="Headline present").grid(column=1, row=7, sticky=E)
         self.__settings["headlinepresent"] = BooleanVar()
         self.__settings["headlinepresent"].set(False)
         Checkbutton(fileformatsettingsframe, variable=self.__settings["headlinepresent"],
-                    command=self.update_settings).pack()
-        fileformatsettingsframe.pack()
+                    command=self.update_settings).grid(column=2, row=7, sticky=W, padx=10)
+        fileformatsettingsframe.pack(fill=X)
 
         # TODO implement preview frame
         # ***---*** preview frame ***---***
         previewframe = LabelFrame(self.__root, text="Preview")
-        Table(parent=previewframe, dataframe=None).show() # TODO hand over dataframe
+        Table(parent=previewframe, dataframe=None).show()  # TODO hand over dataframe
         previewframe.pack()
-
 
         # save settings to check for changes on update
         self.__prevsettings = self.__unpack_settings(self.__settings)
