@@ -1,5 +1,6 @@
 from tkinter import Tk, Menu, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, Checkbutton
 from tkinter.ttk import Combobox
+from pandastable import Table
 
 # from csvxmlImporter import CsvXmlImporter
 # list of encodings that can be detected by chardet
@@ -117,7 +118,10 @@ class Program:
 
         # TODO implement preview frame
         # ***---*** preview frame ***---***
-        # previewframe = LabelFrame(self.__root, text="Preview")
+        previewframe = LabelFrame(self.__root, text="Preview")
+        Table(parent=previewframe, dataframe=None).show() # TODO hand over dataframe
+        previewframe.pack()
+
 
         # save settings to check for changes on update
         self.__prevsettings = self.__unpack_settings(self.__settings)
