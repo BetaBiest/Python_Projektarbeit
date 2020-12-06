@@ -109,9 +109,9 @@ class Program:
         self.__settings["markingmode"].set(markingmodes[1])
         make_radiobuttons(self.__settings["markingmode"], markingmodes, 2, 5, self.update_settings)
         Label(fileformatsettingsframe, text="Ignore spaces at beginning").grid(column=1, row=6, sticky=E)
-        self.__settings["ignorespaces"] = BooleanVar()
-        self.__settings["ignorespaces"].set(False)
-        Checkbutton(fileformatsettingsframe, variable=self.__settings["ignorespaces"],
+        self.__settings["skipinitialspace"] = BooleanVar()
+        self.__settings["skipinitialspace"].set(False)
+        Checkbutton(fileformatsettingsframe, variable=self.__settings["skipinitialspace"],
                     command=self.update_settings).grid(column=2, row=6, sticky=W, padx=10)
         Label(fileformatsettingsframe, text="Headline present").grid(column=1, row=7, sticky=E)
         self.__settings["headlinepresent"] = BooleanVar()
