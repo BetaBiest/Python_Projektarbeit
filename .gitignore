@@ -1,4 +1,7 @@
 venv
 .vscode
 .idea
+__pycache__
 *.csv
+*.xml
+*.xsl
