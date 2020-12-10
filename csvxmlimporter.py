@@ -12,7 +12,6 @@ from typing import Optional, Dict, List
 class CsvXmlImporter:
     __filenames: List[str]
     __combinedcsvfile: str
-    __currloaded: str
     dfx: pd.DataFrame
     __pdreadcsvsettings: Optional[Dict]
 
@@ -27,11 +26,21 @@ class CsvXmlImporter:
         if type(filenames) == str:
             self.__filenames = [filenames]
 
+        self.__validate_filenames()
+
+        if self.__filenames[0].endswith((".xml", ".xsl")):
+            self.__read_xmltocsv()
+        elif self.__filenames[0].endswith(".csv"):
+            self.__read_csv()
+
+        self.guess_settings()
+        self.__read_csv()
+
+    def __validate_filenames(self):
         if self.__filenames[0].endswith(".csv"):
             for f in self.__filenames:
                 if not f.endswith(".csv"):
                     raise ValueError(f"Invalid filenames extension: {f} should be .csv")
-            self.__currloaded = ".csv"
 
         elif self.__filenames[0].endswith((".xml", ".xsl")):
             xslfound = False
@@ -45,19 +54,10 @@ class CsvXmlImporter:
                         xslfound = True
             if not xslfound:
                 raise ValueError(f"No .xsl filenames for parsing .xml to .csv passed")
-            self.__currloaded = ".xml"
 
         for f in self.__filenames:
             if not Path(f).exists():
                 raise FileNotFoundError(f"File: {f} not found")
-
-        if self.__currloaded == ".xml":
-            self.__read_xmltocsv()
-        elif self.__currloaded == ".csv":
-            self.__read_csv()
-
-        self.guess_settings()
-        self.__read_csv()
 
     def __call_pdloadcsv(self):
         self.dfx = pd.read_csv(
