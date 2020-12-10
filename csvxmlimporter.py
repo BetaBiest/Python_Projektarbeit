@@ -22,10 +22,9 @@ class CsvXmlImporter:
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
 
-        # ***---*** check if handed files are correct ***---***
+        # check if handed files are correct
         if type(filenames) == str:
             self.__filenames = [filenames]
-
         self.__validate_filenames()
 
         if self.__filenames[0].endswith((".xml", ".xsl")):
