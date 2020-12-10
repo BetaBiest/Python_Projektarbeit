@@ -25,6 +25,8 @@ class CsvXmlImporter:
         # check if handed files are correct
         if type(filenames) == str:
             self.__filenames = [filenames]
+        else:
+            self.__filenames = filenames
         self.__validate_filenames()
 
         if self.__filenames[0].endswith((".xml", ".xsl")):
@@ -33,7 +35,7 @@ class CsvXmlImporter:
             self.__read_csv()
 
         self.guess_settings()
-        self.__read_csv()
+        self.__call_pdloadcsv()
 
     def __validate_filenames(self):
         if self.__filenames[0].endswith(".csv"):
@@ -67,8 +69,9 @@ class CsvXmlImporter:
     def __read_csv(self):
         csvfiles = []
         for fn in self.__filenames:
-            enc = detect(Path(fn).read_bytes())
-            csvfiles.append(Path(csvfiles).read_text(encoding=enc))
+            enc = detect(Path(fn).read_bytes())["encoding"]
+            f = Path(fn).read_text(encoding=enc)
+            csvfiles.append(f)
         self.__merge_csvfiles(*csvfiles)
 
     def __read_xmltocsv(self, **xslparam):
@@ -93,7 +96,6 @@ class CsvXmlImporter:
     def __ascertain_settings(self, file):
         """Ascertain settings by checking file content"""
         settings = {}
-        headernames = []
         with StringIO(file) as f:
             sample = f.readline()
             startsecondline = f.tell()
@@ -106,8 +108,13 @@ class CsvXmlImporter:
                 f.seek(0)
 
             firstline = next(csv.reader(f, dialect=dialect))
+            headernames = []
             for item in firstline:
                 headernames.append(self.__check_type(item))
+            settings.update(
+                dialect=dialect,
+                names=headernames,
+            )
 
         return settings
 
@@ -143,7 +150,7 @@ class CsvXmlImporter:
                 # TODO validate userinput before applying settings
                 pass
             self.__pdreadcsvsettings.update(changedsettings)
-            self.__read_csv()
+            self.__call_pdloadcsv()
 
     def guess_settings(self):
         """guess settings after seeing csv filenames for first time"""
