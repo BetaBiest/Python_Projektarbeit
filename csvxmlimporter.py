@@ -34,7 +34,7 @@ class CsvXmlImporter:
         elif self.__filenames[0].endswith(".csv"):
             self.__read_csv()
 
-        self.guess_settings()
+        # self.guess_settings()
         self.__call_pdloadcsv()
 
     def __validate_filenames(self):
@@ -84,14 +84,13 @@ class CsvXmlImporter:
         self.__merge_csvfiles(*csvfiles)
 
     def __merge_csvfiles(self, *files: str):
-        # TODO if csv files correlate merge them into self.combinedcsvfile
         self.__combinedcsvfile = files[0]
         filesettings = self.__ascertain_settings(self.__combinedcsvfile)
         for f in files[1:]:
-            if filesettings != self.__ascertain_settings(f):
+            if filesettings["names"] != self.__ascertain_settings(f)["names"]:
                 raise ValueError("Files could not be merged")
-            # TODO dont take guessed settings rather self.__pdreadcsvsettings
-            self.__combinedcsvfile += filesettings["dialect"].lineterminator + f
+            self.__combinedcsvfile += f'{filesettings["dialect"].lineterminator}{f}'
+        self.__pdreadcsvsettings.update(filesettings)  # TODO move this elsewhere maybe
 
     def __ascertain_settings(self, file):
         """Ascertain settings by checking file content"""
@@ -106,11 +105,12 @@ class CsvXmlImporter:
                 f.seek(startsecondline)
             else:
                 f.seek(0)
+                settings.update(header=None)
 
             firstline = next(csv.reader(f, dialect=dialect))
             headernames = []
-            for item in firstline:
-                headernames.append(self.__check_type(item))
+            for i, item in enumerate(firstline):
+                headernames.append(f'{i}_{self.__check_type(item)}')
             settings.update(
                 dialect=dialect,
                 names=headernames,
@@ -146,9 +146,6 @@ class CsvXmlImporter:
         changedsettings = dict(kwargs.items() - self.__pdreadcsvsettings.items())
 
         if changedsettings:
-            for setting in changedsettings:
-                # TODO validate userinput before applying settings
-                pass
             self.__pdreadcsvsettings.update(changedsettings)
             self.__call_pdloadcsv()
 
