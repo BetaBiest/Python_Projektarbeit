@@ -10,32 +10,22 @@ from typing import Optional, Dict, List
 
 
 class CsvXmlImporter:
-    __filenames: List[str]
+    __filenames: List[str] or None
     __combinedcsvfile: str
-    dfx: pd.DataFrame
+    dfx: pd.DataFrame or None
     __pdreadcsvsettings: Optional[Dict]
 
     def __init__(
             self,
-            filenames: str or list,
+            filenames: Optional[str or list] = None,
             **pdreadcsvsettings
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
 
-        # check if handed files are correct
-        if type(filenames) == str:
-            self.__filenames = [filenames]
+        if filenames:
+            self.set_files(filenames)
         else:
-            self.__filenames = filenames
-        self.__validate_filenames()
-
-        if self.__filenames[0].endswith((".xml", ".xsl")):
-            self.__read_xmltocsv()
-        elif self.__filenames[0].endswith(".csv"):
-            self.__read_csv()
-
-        # self.guess_settings()
-        self.__call_pdloadcsv()
+            self.dfx = None
 
     def __validate_filenames(self):
         """check if all given filenames are correct"""
@@ -146,6 +136,21 @@ class CsvXmlImporter:
                 return key
         return "String"
 
+    def set_files(self, filenames: str or list):
+        # check if handed files are correct
+        if type(filenames) == str:
+            self.__filenames = [filenames]
+        else:
+            self.__filenames = filenames
+        self.__validate_filenames()
+
+        if self.__filenames[0].endswith((".xml", ".xsl")):
+            self.__read_xmltocsv()
+        elif self.__filenames[0].endswith(".csv"):
+            self.__read_csv()
+
+        self.__call_pdloadcsv()
+
     def set_settings(self, **kwargs):
         """applies new passed parameters and reloads the .csv file with new settings"""
         changedsettings = dict(kwargs.items() - self.__pdreadcsvsettings.items())
@@ -163,7 +168,7 @@ class CsvXmlImporter:
             self.__pdreadcsvsettings["false_values"] = ["FALSCH", "falsch", "Falsch", "false", "False", "FALSE", "nein"]
 
     def return_dict(self):
-        return self.dfx.to_dict()
+        return self.dfx.to_dict0() if self.dfx is not None else None
 
     def return_pddf(self):
         return self.dfx
