@@ -38,6 +38,7 @@ class CsvXmlImporter:
         self.__call_pdloadcsv()
 
     def __validate_filenames(self):
+        """check if all given filenames are correct"""
         if self.__filenames[0].endswith(".csv"):
             for f in self.__filenames:
                 if not f.endswith(".csv"):
@@ -84,6 +85,7 @@ class CsvXmlImporter:
         self.__merge_csvfiles(*csvfiles)
 
     def __merge_csvfiles(self, *files: str):
+        """combines all passed .csv files into one buffer if they match"""
         self.__combinedcsvfile = files[0]
         filesettings = self.__ascertain_settings(self.__combinedcsvfile)
         for f in files[1:]:
@@ -93,7 +95,7 @@ class CsvXmlImporter:
         self.__pdreadcsvsettings.update(filesettings)  # TODO move this elsewhere maybe
 
     def __ascertain_settings(self, file):
-        """Ascertain settings by checking file content"""
+        """ascertain settings by checking file content"""
         settings = {}
         with StringIO(file) as f:
             sample = f.readline()
@@ -120,6 +122,8 @@ class CsvXmlImporter:
 
     @staticmethod
     def __check_type(string):
+        """check whether given input string matches any of the predetermined types
+            returns matching type or 'String'"""
         types = {
             "Coordinate": re.compile(
                 "^(N|S)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(1)|(N|S)) (E|W)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(5)|(E|W))$"
@@ -143,6 +147,7 @@ class CsvXmlImporter:
         return "String"
 
     def set_settings(self, **kwargs):
+        """applies new passed parameters and reloads the .csv file with new settings"""
         changedsettings = dict(kwargs.items() - self.__pdreadcsvsettings.items())
 
         if changedsettings:
@@ -150,34 +155,7 @@ class CsvXmlImporter:
             self.__call_pdloadcsv()
 
     def guess_settings(self):
-        """guess settings after seeing csv filenames for first time"""
-        # FIXME fix sniffer
-        # enc = detect(Path(self.__filenames).read_bytes())
-        # with open(self.__filenames, mode="r", encoding=enc["encoding"]) as f:
-        #     # read first few lines as samples
-        #     sample = ""
-        #     for _ in range(3):
-        #         sample += f.readline()
-        #
-        #     # sniff the sample
-        #     # FIXME set options for header properly
-        #     # self.__pdreadcsvsettings["headlinepresent"] = csv.Sniffer().has_header(sample)
-        #     dialect = csv.Sniffer().sniff(sample)
-        #
-        # # TODO guess dtpye
-        # # TODO read header names if headline is present
-        #
-        # self.__pdreadcsvsettings.update(
-        #     encoding=enc["encoding"],
-        #     sep=dialect.delimiter,
-        #     skipinitialspace=dialect.skipinitialspace,
-        #     quotechar=dialect.quotechar,
-        #     doublequote=dialect.doublequote,
-        #     quoting=dialect.quoting,
-        #     escapechar=dialect.escapechar,
-        #     # lineterminator=dialect.lineterminator
-        # )
-
+        # FIXME obsolete functionality is provided by __asertain_settings
         # if not specified by the user use common german/engl true false values
         if "true_values" not in self.__pdreadcsvsettings:
             self.__pdreadcsvsettings["true_values"] = ["WAHR", "wahr", "Wahr", "true", "True", "TRUE", "doch"]
@@ -186,3 +164,10 @@ class CsvXmlImporter:
 
     def return_dict(self):
         return self.dfx.to_dict()
+
+    def return_pddf(self):
+        return self.dfx
+
+    def return_nparray(self):
+        # TODO check if all columns contain numbers, if true return nparray
+        pass
