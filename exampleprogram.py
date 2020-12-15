@@ -57,8 +57,9 @@ class Program:
         self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended", width=100)
         self.__srcfileslistbox.grid(column=2, row=1)
         Label(srcfilesframe, text="Encoding").grid(column=1, row=2, sticky=E)
-        self.__settings["enc"] = StringVar()
-        encCombobox = Combobox(srcfilesframe, textvariable=self.__settings["enc"], values=encodings, state="readonly")
+        self.__settings["encoding"] = StringVar()
+        encCombobox = Combobox(srcfilesframe, textvariable=self.__settings["encoding"], values=encodings,
+                               state="readonly")
         # TODO find better option for update
         encCombobox.bind("<FocusOut>", self.update_settings)
         encCombobox.grid(column=2, row=2, pady=10)
@@ -152,6 +153,7 @@ class Program:
                 showerror(title="Error", message="Could not open files")
 
             self.__update_table()
+            self.__update_dialog()
 
     def remove_files(self):
         itemstodelete = self.__srcfileslistbox.curselection()
@@ -172,6 +174,12 @@ class Program:
     def __update_table(self):
         self.__pdtable.updateModel(TableModel(self.__importer.dfx))
         self.__pdtable.redraw()
+
+    def __update_dialog(self):
+        importersettings = self.__importer.get_settings()
+        for key in self.__settings:
+            if key in importersettings:
+                self.__settings[key].set(importersettings[key])
 
     def update_settings(self, *_):
         newsettings = self.__unpack_settings(self.__settings)

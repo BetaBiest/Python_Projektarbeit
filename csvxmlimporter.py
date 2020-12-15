@@ -62,6 +62,7 @@ class CsvXmlImporter:
         csvfiles = []
         for fn in self.__filenames:
             enc = detect(Path(fn).read_bytes())["encoding"]
+            self.__pdreadcsvsettings.update(encoding=enc)
             f = Path(fn).read_text(encoding=enc)
             csvfiles.append(f)
         self.__merge_csvfiles(*csvfiles)
