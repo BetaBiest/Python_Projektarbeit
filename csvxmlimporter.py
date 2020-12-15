@@ -22,6 +22,7 @@ class CsvXmlImporter:
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
 
+        self.__filenames = []
         if filenames:
             self.set_files(filenames)
         else:
@@ -141,7 +142,7 @@ class CsvXmlImporter:
         if type(filenames) == str:
             self.__filenames = [filenames]
         else:
-            self.__filenames = filenames
+            self.__filenames = [*filenames]  # convert tuples in list
         self.__validate_filenames()
 
         if self.__filenames[0].endswith((".xml", ".xsl")):
@@ -158,6 +159,9 @@ class CsvXmlImporter:
         if changedsettings:
             self.__pdreadcsvsettings.update(changedsettings)
             self.__call_pdloadcsv()
+
+    def get_settings(self):
+        return self.__pdreadcsvsettings
 
     def guess_settings(self):
         # FIXME obsolete functionality is provided by __asertain_settings
