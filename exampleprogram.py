@@ -1,9 +1,12 @@
-from pandastable import Table
+from pandastable import Table, TableModel
 from tkinter import Tk, Menu, Frame, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, \
-    Checkbutton, E, W, X
+    Checkbutton, E, W, X, END
+from tkinter.filedialog import askopenfilenames
+from tkinter.messagebox import showerror
 from tkinter.ttk import Combobox
 
-# from csvxmlImporter import CsvXmlImporter
+from csvxmlimporter import CsvXmlImporter
+
 # list of encodings that can be detected by chardet
 encodings = (
     "Big5", "GB2312", "GB18030", "EUC-TW", "HZ-GB-2312", "ISO-2022-CN", "EUC-JP", "SHIFT_JIS", "ISO-2022-JP", "EUC-KR",
@@ -14,9 +17,11 @@ encodings = (
 
 class Program:
     """Exampleprogram to show possible usage of the model csvxmlImporter"""
+    __importer: CsvXmlImporter
 
     def __init__(self):
         self.__settings = {}
+        self.__importer = CsvXmlImporter()
 
         self.__root = Tk()
         self.__root.minsize(560, 1)
@@ -49,7 +54,7 @@ class Program:
                                  command=self.remove_all)
         removeallbutton.pack(fill=X)
         buttonframe.grid(column=1, row=1)
-        self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended")
+        self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended", width=100)
         self.__srcfileslistbox.grid(column=2, row=1)
         Label(srcfilesframe, text="Encoding").grid(column=1, row=2, sticky=E)
         self.__settings["enc"] = StringVar()
@@ -123,7 +128,8 @@ class Program:
         # TODO implement preview frame
         # ***---*** preview frame ***---***
         previewframe = LabelFrame(self.__root, text="Preview")
-        Table(parent=previewframe, dataframe=None).show()  # TODO hand over dataframe
+        self.__pdtable = Table(parent=previewframe, dataframe=self.__importer.dfx)  # TODO hand over dataframe
+        self.__pdtable.show()
         previewframe.pack()
 
         # save settings to check for changes on update
@@ -136,22 +142,36 @@ class Program:
         self.__root.destroy()
 
     def add_files(self):
-        # TODO implement add_files dialog
-        pass
+        names = askopenfilenames()
+        if names:
+            try:
+                self.__importer.set_files(names)
+                self.__srcfileslistbox.insert(END, *names)
+                self.__importer.set_files(self.__srcfileslistbox.get(0, END))
+            except ValueError:
+                showerror(title="Error", message="Could not open files")
+
+            self.__update_table()
 
     def remove_files(self):
-        # TODO implement remove_files function
-        # ask Listbox via curselection which files to delete
-        pass
+        itemstodelete = self.__srcfileslistbox.curselection()
+        if itemstodelete:
+            for i in itemstodelete:
+                self.__srcfileslistbox.delete(i)
+            self.__importer.set_files(self.__srcfileslistbox.get(0, END))
+            self.__update_table()
 
     def remove_all(self):
-        # TODO implement remove_all function
-        pass
+        self.__srcfileslistbox.delete(0, END)
 
     @staticmethod
     def __unpack_settings(settings):
         """__unpack_settings takes settings in form of dict with tkinter variables and unpacks them"""
         return dict((key, settings[key].get()) for key in settings)
+
+    def __update_table(self):
+        self.__pdtable.updateModel(TableModel(self.__importer.dfx))
+        self.__pdtable.redraw()
 
     def update_settings(self, *_):
         newsettings = self.__unpack_settings(self.__settings)
