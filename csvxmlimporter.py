@@ -110,6 +110,11 @@ class CsvXmlImporter:
                 names=headernames,
             )
 
+        settings.update(
+            true_values=["WAHR", "wahr", "Wahr", "true", "True", "TRUE", "ja", "JA", "Ja"],
+            false_values=["FALSCH", "falsch", "Falsch", "false", "False", "FALSE", "nein", "NEIN", "Nein"],
+        )
+
         return settings
 
     @staticmethod
@@ -163,14 +168,6 @@ class CsvXmlImporter:
 
     def get_settings(self):
         return self.__pdreadcsvsettings
-
-    def guess_settings(self):
-        # FIXME obsolete functionality is provided by __asertain_settings
-        # if not specified by the user use common german/engl true false values
-        if "true_values" not in self.__pdreadcsvsettings:
-            self.__pdreadcsvsettings["true_values"] = ["WAHR", "wahr", "Wahr", "true", "True", "TRUE", "doch"]
-        if "false_values" not in self.__pdreadcsvsettings:
-            self.__pdreadcsvsettings["false_values"] = ["FALSCH", "falsch", "Falsch", "false", "False", "FALSE", "nein"]
 
     def return_dict(self):
         return self.dfx.to_dict0() if self.dfx is not None else None
