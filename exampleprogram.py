@@ -38,6 +38,7 @@ class Program:
         helpmenu.add_command(label="?", command=self.ask_help)
         helpmenu.add_command(label="About", command=self.ask_about)
 
+
         # ***---*** source file frame dialog ***---***
         srcfilesframe = LabelFrame(self.__root, text="Sourcefiles")
         buttonframe = Frame(srcfilesframe)
@@ -56,6 +57,7 @@ class Program:
         buttonframe.grid(column=1, row=1)
         self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended", width=100)
         self.__srcfileslistbox.grid(column=2, row=1)
+
         Label(srcfilesframe, text="Encoding").grid(column=1, row=2, sticky=E)
         self.__settings["encoding"] = StringVar()
         encCombobox = Combobox(srcfilesframe, textvariable=self.__settings["encoding"], values=encodings,
@@ -65,9 +67,11 @@ class Program:
         encCombobox.grid(column=2, row=2, pady=10)
         srcfilesframe.pack(fill=X)
 
+
         # TODO implement xsl file dialog
         # ***---*** xsl file dialog ***---***
         # xslfileframe = LabelFrame(self.__root, text="XSL-File")
+
 
         # ***---*** file format settings dialog ***---***
         # small help function
@@ -83,6 +87,7 @@ class Program:
                                 value=item, command=command).grid(column=c + i, row=r, padx=10, sticky=W)
 
         fileformatsettingsframe = LabelFrame(self.__root, text="File Format Settings")
+
         Label(fileformatsettingsframe, text="Separator").grid(column=1, row=1, sticky=E)
         self.__settings["separator"] = StringVar()
         seperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["separator"], width=1)
@@ -90,18 +95,21 @@ class Program:
         seperatorentry.bind("<Return>", self.update_settings)
         seperatorentry.bind("<FocusOut>", self.update_settings)
         seperatorentry.grid(column=2, row=1, sticky=W, padx=15)
+
         Label(fileformatsettingsframe, text="Field separator").grid(column=1, row=2, sticky=E)
-        self.__settings["fieldseparator"] = StringVar()
-        fieldseperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["fieldseparator"], width=1)
-        self.__settings["fieldseparator"].trace("w", lambda *_: limit_character(self.__settings["fieldseparator"]))
-        fieldseperatorentry.bind("<Return>", self.update_settings)
-        fieldseperatorentry.bind("<FocusOut>", self.update_settings)
-        fieldseperatorentry.grid(column=2, row=2, sticky=W, padx=15)
+        self.__settings["quotechar"] = StringVar()
+        quotecharentry = Entry(fileformatsettingsframe, textvariable=self.__settings["quotechar"], width=1)
+        self.__settings["quotechar"].trace("w", lambda *_: limit_character(self.__settings["quotechar"]))
+        quotecharentry.bind("<Return>", self.update_settings)
+        quotecharentry.bind("<FocusOut>", self.update_settings)
+        quotecharentry.grid(column=2, row=2, sticky=W, padx=15)
+
         Label(fileformatsettingsframe, text="Marking of field separator in fields").grid(column=1, row=3, sticky=E)
         markingoptions = ("double", "mark")  # TODO eventually define this as global enum
         self.__settings["markingoption"] = StringVar()
         self.__settings["markingoption"].set(markingoptions[1])
         make_radiobuttons(self.__settings["markingoption"], markingoptions, 2, 3, self.update_settings)
+
         Label(fileformatsettingsframe, text="Marking sign").grid(column=1, row=4, sticky=E)
         self.__settings["markingsign"] = StringVar()
         markingsignentry = Entry(fileformatsettingsframe, textvariable=self.__settings["markingsign"], width=1)
@@ -109,22 +117,26 @@ class Program:
         markingsignentry.bind("<Return>", self.update_settings)
         markingsignentry.bind("<FocusOut>", self.update_settings)
         markingsignentry.grid(column=2, row=4, sticky=W, padx=15)
+
         Label(fileformatsettingsframe, text="Field marking mode").grid(column=1, row=5, sticky=E)
         markingmodes = ("all", "minimal", "non numeric", "none")  # TODO eventually define this as global enum
         self.__settings["markingmode"] = StringVar()
         self.__settings["markingmode"].set(markingmodes[1])
         make_radiobuttons(self.__settings["markingmode"], markingmodes, 2, 5, self.update_settings)
+
         Label(fileformatsettingsframe, text="Ignore spaces at beginning").grid(column=1, row=6, sticky=E)
         self.__settings["skipinitialspace"] = BooleanVar()
         self.__settings["skipinitialspace"].set(False)
         Checkbutton(fileformatsettingsframe, variable=self.__settings["skipinitialspace"],
                     command=self.update_settings).grid(column=2, row=6, sticky=W, padx=10)
+
         Label(fileformatsettingsframe, text="Headline present").grid(column=1, row=7, sticky=E)
         self.__settings["headlinepresent"] = BooleanVar()
         self.__settings["headlinepresent"].set(False)
         Checkbutton(fileformatsettingsframe, variable=self.__settings["headlinepresent"],
                     command=self.update_settings).grid(column=2, row=7, sticky=W, padx=10)
         fileformatsettingsframe.pack(fill=X)
+
 
         # TODO implement preview frame
         # ***---*** preview frame ***---***
