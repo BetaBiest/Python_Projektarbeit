@@ -1,6 +1,6 @@
 from pandastable import Table, TableModel
 from tkinter import Tk, Menu, Frame, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, \
-    Checkbutton, E, W, X, END
+    Checkbutton, E, W, X, END, IntVar
 from tkinter.filedialog import askopenfilenames
 from tkinter.messagebox import showerror
 from tkinter.ttk import Combobox
@@ -24,6 +24,7 @@ class Program:
         self.__importer = CsvXmlImporter()
 
         self.__root = Tk()
+        self.__root.title("Csv/Xml Importer")
         self.__root.minsize(560, 1)
         menu = Menu(self.__root)
         self.__root.config(menu=menu)
@@ -80,23 +81,17 @@ class Program:
                 # take only last input character and throw away the rest
                 entry_text.set(entry_text.get()[-1])
 
-        def make_radiobuttons(button_value, button_labels, c, r, command=lambda *_: None):
-            if isinstance(button_labels, tuple) or isinstance(button_labels, list):
-                for i, item in enumerate(button_labels):
-                    Radiobutton(fileformatsettingsframe, text=item, variable=button_value,
-                                value=item, command=command).grid(column=c + i, row=r, padx=10, sticky=W)
-
         fileformatsettingsframe = LabelFrame(self.__root, text="File Format Settings")
 
-        Label(fileformatsettingsframe, text="Separator").grid(column=1, row=1, sticky=E)
-        self.__settings["separator"] = StringVar()
-        seperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["separator"], width=1)
-        self.__settings["separator"].trace("w", lambda *_: limit_character(self.__settings["separator"]))
+        Label(fileformatsettingsframe, text="Delimiter").grid(column=1, row=1, sticky=E)
+        self.__settings["delimiter"] = StringVar()
+        seperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["delimiter"], width=1)
+        self.__settings["delimiter"].trace("w", lambda *_: limit_character(self.__settings["delimiter"]))
         seperatorentry.bind("<Return>", self.update_settings)
         seperatorentry.bind("<FocusOut>", self.update_settings)
         seperatorentry.grid(column=2, row=1, sticky=W, padx=15)
 
-        Label(fileformatsettingsframe, text="Field separator").grid(column=1, row=2, sticky=E)
+        Label(fileformatsettingsframe, text="Quotechar").grid(column=1, row=2, sticky=E)
         self.__settings["quotechar"] = StringVar()
         quotecharentry = Entry(fileformatsettingsframe, textvariable=self.__settings["quotechar"], width=1)
         self.__settings["quotechar"].trace("w", lambda *_: limit_character(self.__settings["quotechar"]))
@@ -104,25 +99,32 @@ class Program:
         quotecharentry.bind("<FocusOut>", self.update_settings)
         quotecharentry.grid(column=2, row=2, sticky=W, padx=15)
 
-        Label(fileformatsettingsframe, text="Marking of field separator in fields").grid(column=1, row=3, sticky=E)
-        markingoptions = ("double", "mark")  # TODO eventually define this as global enum
-        self.__settings["markingoption"] = StringVar()
-        self.__settings["markingoption"].set(markingoptions[1])
-        make_radiobuttons(self.__settings["markingoption"], markingoptions, 2, 3, self.update_settings)
+        Label(fileformatsettingsframe, text="Doublequote").grid(column=1, row=3, sticky=E)
+        self.__settings["doublequote"] = BooleanVar()
+        Checkbutton(fileformatsettingsframe, variable=self.__settings["doublequote"],
+                    command=self.update_settings).grid(column=2, row=3, sticky=W, padx=10)
+        #make_radiobuttons(self.__settings["doublequote"], markingoptions, 2, 3, self.update_settings)
 
-        Label(fileformatsettingsframe, text="Marking sign").grid(column=1, row=4, sticky=E)
-        self.__settings["markingsign"] = StringVar()
-        markingsignentry = Entry(fileformatsettingsframe, textvariable=self.__settings["markingsign"], width=1)
-        self.__settings["markingsign"].trace("w", lambda *_: limit_character(self.__settings["markingsign"]))
-        markingsignentry.bind("<Return>", self.update_settings)
-        markingsignentry.bind("<FocusOut>", self.update_settings)
-        markingsignentry.grid(column=2, row=4, sticky=W, padx=15)
 
-        Label(fileformatsettingsframe, text="Field marking mode").grid(column=1, row=5, sticky=E)
-        markingmodes = ("all", "minimal", "non numeric", "none")  # TODO eventually define this as global enum
-        self.__settings["markingmode"] = StringVar()
-        self.__settings["markingmode"].set(markingmodes[1])
-        make_radiobuttons(self.__settings["markingmode"], markingmodes, 2, 5, self.update_settings)
+        Label(fileformatsettingsframe, text="Quoting").grid(column=1, row=5, sticky=E)
+        quotingopt = {
+            "minimal": 0,
+            "all": 1,
+            "non numeric": 2,
+            "none": 3
+        }
+        self.__settings["quoting"] = IntVar()
+        for i, (key, value) in enumerate(quotingopt.items()):
+            Radiobutton(fileformatsettingsframe,
+                        text=key,
+                        value=value,
+                        variable=self.__settings["quoting"],
+                        command=self.update_settings,
+                        ).grid(column=2+i,
+                               row=5,
+                               padx=10,
+                               sticky=W,
+                               )
 
         Label(fileformatsettingsframe, text="Ignore spaces at beginning").grid(column=1, row=6, sticky=E)
         self.__settings["skipinitialspace"] = BooleanVar()
@@ -138,7 +140,6 @@ class Program:
         fileformatsettingsframe.pack(fill=X)
 
 
-        # TODO implement preview frame
         # ***---*** preview frame ***---***
         previewframe = LabelFrame(self.__root, text="Preview")
         self.__pdtable = Table(parent=previewframe, dataframe=self.__importer.dfx)  # TODO hand over dataframe
@@ -163,6 +164,7 @@ class Program:
                 self.__importer.set_files(self.__srcfileslistbox.get(0, END))
             except ValueError:
                 showerror(title="Error", message="Could not open files")
+                # TODO reset listbox
 
             self.__update_table()
             self.__update_dialog()
@@ -200,7 +202,9 @@ class Program:
             changedsettings = dict(newsettings.items() - self.__prevsettings.items())
             for key in changedsettings:
                 print(f'Key: {key}, Value: {changedsettings[key]}')
-                # TODO do stuff here
+
+            self.__importer.set_settings(**changedsettings)
+            self.__update_table()
             self.__prevsettings = newsettings
         pass
 

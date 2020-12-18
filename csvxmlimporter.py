@@ -83,7 +83,8 @@ class CsvXmlImporter:
         for f in files[1:]:
             if filesettings["names"] != self.__ascertain_settings(f)["names"]:
                 raise ValueError("Files could not be merged")
-            self.__combinedcsvfile += f'{filesettings["dialect"].lineterminator}{f}'
+            self.__combinedcsvfile += f'{filesettings["lineterminator"]}{f}'
+        filesettings.pop("lineterminator", None)
         self.__pdreadcsvsettings.update(filesettings)  # TODO move this elsewhere maybe
 
     def __ascertain_settings(self, file):
@@ -106,7 +107,13 @@ class CsvXmlImporter:
             for i, item in enumerate(firstline):
                 headernames.append(f'{i}_{self.__check_type(item)}')
             settings.update(
-                dialect=dialect,
+                delimiter=dialect.delimiter,
+                doublequote=dialect.doublequote,
+                escapechar=dialect.escapechar,
+                lineterminator=dialect.lineterminator,
+                quotechar=dialect.quotechar,
+                quoting=dialect.quoting,
+                skipinitialspace=dialect.skipinitialspace,
                 names=headernames,
             )
 
@@ -138,6 +145,9 @@ class CsvXmlImporter:
             "Date": re.compile(
                 "^[0-3]?[0-9][/.][0-3]?[0-9][/.](?:[0-9]{2})?[0-9]{2}$"
             ),
+            "Bool": re.compile(
+                "(?i)^(wahr|falsch|true|false|ja|nein)$"
+            ),
         }
         for key in types:
             if types[key].match(string):
@@ -161,11 +171,8 @@ class CsvXmlImporter:
 
     def set_settings(self, **kwargs):
         """applies new passed parameters and reloads the .csv file with new settings"""
-        changedsettings = dict(kwargs.items() - self.__pdreadcsvsettings.items())
-
-        if changedsettings:
-            self.__pdreadcsvsettings.update(changedsettings)
-            self.__call_pdloadcsv()
+        self.__pdreadcsvsettings.update(kwargs)
+        self.__call_pdloadcsv()
 
     def get_settings(self):
         return self.__pdreadcsvsettings
