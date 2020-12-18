@@ -125,6 +125,7 @@ class CsvXmlImporter:
             "Coordinate": re.compile(
                 "^(N|S)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(1)|(N|S)) (E|W)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(5)|(E|W))$"
             ),
+            # email regex source: https://stackoverflow.com/questions/201323/how-to-validate-an-email-address-using-a-regular-expression
             "Email": re.compile(
                 "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
             ),
@@ -136,7 +137,7 @@ class CsvXmlImporter:
             ),
             "Date": re.compile(
                 "^[0-3]?[0-9][/.][0-3]?[0-9][/.](?:[0-9]{2})?[0-9]{2}$"
-            )
+            ),
         }
         for key in types:
             if types[key].match(string):
