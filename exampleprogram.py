@@ -2,7 +2,7 @@ from pandastable import Table, TableModel
 from tkinter import Tk, Menu, Frame, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, \
     Checkbutton, E, W, X, END, IntVar
 from tkinter.filedialog import askopenfilenames
-from tkinter.messagebox import showerror
+from tkinter.messagebox import showerror, showinfo
 from tkinter.ttk import Combobox
 
 from csvxmlimporter import CsvXmlImporter
@@ -209,12 +209,14 @@ class Program:
         pass
 
     def ask_help(self):
-        # TODO add help dialog
-        pass
+        showinfo(title="Help",
+                 message="To import files select Add Files\nTo export select Export and choose the desired format"
+                 )
 
     def ask_about(self):
-        # TODO add about dialog
-        pass
+        showinfo(title="About",
+                 message="Projektarbeit Python\nAuthor: Leo Schurrer\nDate: 19/12/20"
+                 )
 
 
 if __name__ == "__main__":
