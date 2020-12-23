@@ -174,11 +174,18 @@ class Program:
         if itemstodelete:
             for i in itemstodelete:
                 self.__srcfileslistbox.delete(i)
-            self.__importer.set_files(self.__srcfileslistbox.get(0, END))
+
+            x = self.__srcfileslistbox.get(0,END)
+            if x:
+                self.__importer.set_files(x)
+            else:
+                self.__importer.reset()
             self.__update_table()
 
     def remove_all(self):
         self.__srcfileslistbox.delete(0, END)
+        self.__importer.reset()
+        self.__update_table()
 
     @staticmethod
     def __unpack_settings(settings):
@@ -204,9 +211,9 @@ class Program:
                 print(f'Key: {key}, Value: {changedsettings[key]}')
 
             self.__importer.set_settings(**changedsettings)
-            self.__update_table()
             self.__prevsettings = newsettings
-        pass
+            if not self.__importer.dfx.empty:
+                self.__update_table()
 
     def ask_help(self):
         showinfo(title="Help",

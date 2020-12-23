@@ -12,7 +12,7 @@ from typing import Optional, Dict, List
 class CsvXmlImporter:
     __filenames: List[str] or None
     __combinedcsvfile: str
-    dfx: pd.DataFrame or None
+    dfx: pd.DataFrame
     __pdreadcsvsettings: Optional[Dict]
 
     def __init__(
@@ -26,7 +26,8 @@ class CsvXmlImporter:
         if filenames:
             self.set_files(filenames)
         else:
-            self.dfx = None
+            self.__combinedcsvfile = ""
+            self.dfx = pd.DataFrame()
 
     def __validate_filenames(self):
         """check if all given filenames are correct"""
@@ -169,10 +170,17 @@ class CsvXmlImporter:
 
         self.__call_pdloadcsv()
 
+    def reset(self):
+        self.dfx = pd.DataFrame()
+        self.__pdreadcsvsettings = {}
+        self.__filenames = None
+        self.__combinedcsvfile = ""
+
     def set_settings(self, **kwargs):
         """applies new passed parameters and reloads the .csv file with new settings"""
         self.__pdreadcsvsettings.update(kwargs)
-        self.__call_pdloadcsv()
+        if self.__combinedcsvfile:
+            self.__call_pdloadcsv()
 
     def get_settings(self):
         return self.__pdreadcsvsettings
