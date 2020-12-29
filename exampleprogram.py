@@ -1,9 +1,9 @@
 from pandastable import Table, TableModel
-from tkinter import Tk, Menu, Frame, LabelFrame, Button, Listbox, Label, StringVar, Entry, Radiobutton, BooleanVar, \
-    Checkbutton, E, W, X, END, IntVar
+from tkinter import Menu, Listbox, StringVar, BooleanVar, E, W, X, END, IntVar
 from tkinter.filedialog import askopenfilenames
 from tkinter.messagebox import showerror, showinfo
-from tkinter.ttk import Combobox
+from tkinter.ttk import Combobox, Frame, LabelFrame, Button, Label, Radiobutton, Checkbutton, Entry
+from ttkthemes import ThemedTk
 
 from csvxmlimporter import CsvXmlImporter
 
@@ -23,18 +23,18 @@ class Program:
         self.__settings = {}
         self.__importer = CsvXmlImporter()
 
-        self.__root = Tk()
+        self.__root = ThemedTk(theme="equilux")
         self.__root.title("Csv/Xml Importer")
         self.__root.minsize(560, 1)
         menu = Menu(self.__root)
         self.__root.config(menu=menu)
 
-        filemenu = Menu(menu)
+        filemenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="File", menu=filemenu)
         menu.add_separator()
         filemenu.add_command(label="Exit", command=self.exit_program)
 
-        helpmenu = Menu(menu)
+        helpmenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="Help", menu=helpmenu)
         helpmenu.add_command(label="?", command=self.ask_help)
         helpmenu.add_command(label="About", command=self.ask_about)
@@ -144,7 +144,7 @@ class Program:
         previewframe = LabelFrame(self.__root, text="Preview")
         self.__pdtable = Table(parent=previewframe, dataframe=self.__importer.dfx)  # TODO hand over dataframe
         self.__pdtable.show()
-        previewframe.pack()
+        previewframe.pack(fill='both', expand=True)
 
         # save settings to check for changes on update
         self.__prevsettings = self.__unpack_settings(self.__settings)
