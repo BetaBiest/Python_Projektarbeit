@@ -138,7 +138,7 @@ class Program:
 
         # ***---*** preview frame ***---***
         previewframe = LabelFrame(self.__root, text="Preview")
-        self.__pdtable = Table(parent=previewframe, dataframe=self.__importer.dfx)  # TODO hand over dataframe
+        self.__pdtable = Table(parent=previewframe, dataframe=self.__importer.dfx)
         self.__pdtable.show()
         previewframe.pack(fill='both', expand=True)
 
@@ -157,9 +157,11 @@ class Program:
             try:
                 self.__srcfileslistbox.insert(END, *names)
                 self.__importer.update_files(*self.__srcfileslistbox.get(0, END))
+            except AttributeError as _:
+                showerror(title="Error", message="No .xsl file set")
             except ValueError as _:
                 showerror(title="Error", message="Could not open files")
-                # TODO reset listbox
+                self.__srcfileslistbox.delete(0, END)
 
             self.__update_table()
             self.__update_dialog()
