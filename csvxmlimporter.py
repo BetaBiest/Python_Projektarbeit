@@ -40,9 +40,7 @@ class CsvXmlImporter:
         return Path(filename).read_text(encoding=enc)
 
     def __read_xml(self, filename):
-        if not self.__xmltransformer:
-            raise ValueError("No xsl file passed")
-        return str(transformer(etree.parse(filename), **self.__xslparameter))
+        return str(self.__xmltransformer(etree.parse(filename), **self.__xslparameter))
 
     def __ascertain_settings(self, file):
         """ascertain settings by checking file content"""
