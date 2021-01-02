@@ -1,5 +1,6 @@
 from pandastable import Table, TableModel
-from tkinter import Menu, Listbox, StringVar, BooleanVar, E, W, X, END, IntVar
+from tkinter import Menu, Listbox, StringVar, BooleanVar, IntVar
+from tkinter.constants import E, W, X, END
 from tkinter.filedialog import askopenfilenames
 from tkinter.messagebox import showerror, showinfo
 from tkinter.ttk import Combobox, Frame, LabelFrame, Button, Label, Radiobutton, Checkbutton, Entry
@@ -159,9 +160,9 @@ class Program:
         names = askopenfilenames()
         if names:
             try:
-                self.__importer.set_files(names)
+                self.__importer.update_files(names)
                 self.__srcfileslistbox.insert(END, *names)
-                self.__importer.set_files(self.__srcfileslistbox.get(0, END))
+                self.__importer.update_files(self.__srcfileslistbox.get(0, END))
             except ValueError:
                 showerror(title="Error", message="Could not open files")
                 # TODO reset listbox
@@ -177,7 +178,7 @@ class Program:
 
             x = self.__srcfileslistbox.get(0,END)
             if x:
-                self.__importer.set_files(x)
+                self.__importer.update_files(x)
             else:
                 self.__importer.reset()
             self.__update_table()

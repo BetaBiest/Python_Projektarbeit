@@ -11,7 +11,6 @@ from typing import Optional, Dict, List
 
 class CsvXmlImporter:
     __filenames: List[str] or None
-    __combinedcsvfile: str
     dfx: pd.DataFrame
     __pdreadcsvsettings: Optional[Dict]
 
@@ -21,72 +20,29 @@ class CsvXmlImporter:
             **pdreadcsvsettings
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
-
         self.__filenames = []
+
         if filenames:
-            self.set_files(filenames)
+            self.update_files(*filenames if type(filenames) == list else filenames)
         else:
-            self.__combinedcsvfile = ""
             self.dfx = pd.DataFrame()
 
-    def __validate_filenames(self):
+    @staticmethod
+    def __validate_filenames(*filenames):
         """check if all given filenames are correct"""
-        if self.__filenames[0].endswith(".csv"):
-            for f in self.__filenames:
-                if not f.endswith(".csv"):
-                    raise ValueError(f"Invalid filenames extension: {f} should be .csv")
+        for filename in filenames:
+            if not filename.endswith((".xml", ".csv")):
+                raise ValueError(f'File {filename} has invalid file extension')
 
-        elif self.__filenames[0].endswith((".xml", ".xsl")):
-            xslfound = False
-            for f in self.__filenames:
-                if not f.endswith((".xml", ".xsl")):
-                    raise ValueError(f"Invalid filenames extension: {f} should be .xml or .xsl")
-                if f.endswith(".xsl"):
-                    if xslfound:
-                        raise ValueError(f"Multiple .xsl files passed")
-                    else:
-                        xslfound = True
-            if not xslfound:
-                raise ValueError(f"No .xsl filenames for parsing .xml to .csv passed")
+    def __read_csv(self, filename):
+        enc = detect(Path(filename).read_bytes())["encoding"]
+        self.__pdreadcsvsettings.update(encoding=enc) # TODO maybe delete this
+        return Path(filename).read_text(encoding=enc)
 
-        for f in self.__filenames:
-            if not Path(f).exists():
-                raise FileNotFoundError(f"File: {f} not found")
-
-    def __call_pdloadcsv(self):
-        self.dfx = pd.read_csv(
-            StringIO(self.__combinedcsvfile),
-            **self.__pdreadcsvsettings
-        )
-
-    def __read_csv(self):
-        csvfiles = []
-        for fn in self.__filenames:
-            enc = detect(Path(fn).read_bytes())["encoding"]
-            self.__pdreadcsvsettings.update(encoding=enc)
-            f = Path(fn).read_text(encoding=enc)
-            csvfiles.append(f)
-        self.__merge_csvfiles(*csvfiles)
-
-    def __read_xmltocsv(self, **xslparam):
-        xslfilename = [x for x in self.__filenames if x.endswith(".xsl")][0]
-        self.__filenames.remove(xslfilename)
-        transformer = etree.XSLT(etree.parse(xslfilename))
-        csvfiles = []
-        for fn in self.__filenames:
-            csvfiles.append(str(transformer(etree.parse(fn), **xslparam)))
-        self.__merge_csvfiles(*csvfiles)
-
-    def __merge_csvfiles(self, *files: str):
-        """combines all passed .csv files into one buffer if they match"""
-        self.__combinedcsvfile = files[0]
-        filesettings = self.__ascertain_settings(self.__combinedcsvfile)
-        for f in files[1:]:
-            if filesettings["names"] != self.__ascertain_settings(f)["names"]:
-                raise ValueError("Files could not be merged")
-            self.__combinedcsvfile += f'{filesettings["lineterminator"]}{f}'
-        filesettings.pop("lineterminator", None)
-        self.__pdreadcsvsettings.update(filesettings)  # TODO move this elsewhere maybe
+    def __read_xml(self, filename):
+        if not self.__xmltransformer:
+            raise ValueError("No xsl file passed")
+        return str(transformer(etree.parse(filename), **self.__xslparameter))
 
     def __ascertain_settings(self, file):
         """ascertain settings by checking file content"""
@@ -155,38 +111,56 @@ class CsvXmlImporter:
                 return key
         return "String"
 
-    def set_files(self, filenames: str or list):
-        # check if handed files are correct
-        if type(filenames) == str:
-            self.__filenames = [filenames]
-        else:
-            self.__filenames = [*filenames]  # convert tuples in list
-        self.__validate_filenames()
+    def update_files(self, *filenames: str):
+        # read csv files as string into buffer
+        if filenames and [*filenames] != self.__filenames:
+            self.__validate_filenames(*filenames)
 
-        if self.__filenames[0].endswith((".xml", ".xsl")):
-            self.__read_xmltocsv()
-        elif self.__filenames[0].endswith(".csv"):
-            self.__read_csv()
+            self.__filebuffer = [None] * len(filenames)  # TODO move to __init__
+            for i, filename in enumerate(filenames):
+                if filename.endswith(".csv"):
+                    self.__filebuffer[i] = self.__read_csv(filename)
 
-        self.__call_pdloadcsv()
+            self.__filenames = [*filenames]
+
+        if self.__filenames:
+            # read xml files as csv string into buffer
+            for i, filename in enumerate(self.__filenames):
+                if filename.endswith(".xml"):
+                    self.__filebuffer[i] = self.__read_xml(filename)
+
+            # merge filestrings in buffer to one dataframe
+            self.dfx = pd.DataFrame()
+            for file in self.__filebuffer:
+                # TODO assertain header names if no header
+                self.dfx = self.dfx.append(
+                    pd.read_csv(
+                        StringIO(file),
+                        **self.__pdreadcsvsettings
+                    )
+                )
+
+    def set_xslfile(self, filename):
+        self.__xmltransformer = etree.XSLT(etree.parse(filename))
+
+    def set_xslparameter(self, **kwargs):
+        self.__xslparameter = kwargs
 
     def reset(self):
         self.dfx = pd.DataFrame()
         self.__pdreadcsvsettings = {}
         self.__filenames = None
-        self.__combinedcsvfile = ""
 
     def set_settings(self, **kwargs):
-        """applies new passed parameters and reloads the .csv file with new settings"""
+        """applies new passed parameters and reloads files with new settings"""
         self.__pdreadcsvsettings.update(kwargs)
-        if self.__combinedcsvfile:
-            self.__call_pdloadcsv()
+        self.update_files()
 
     def get_settings(self):
         return self.__pdreadcsvsettings
 
     def return_dict(self):
-        return self.dfx.to_dict0() if self.dfx is not None else None
+        return self.dfx.to_dict()
 
     def return_pddf(self):
         return self.dfx
