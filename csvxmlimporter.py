@@ -53,17 +53,9 @@ class CsvXmlImporter:
             sample += f.readline()
 
             dialect = csv.Sniffer().sniff(sample)
-            if csv.Sniffer().has_header(sample):
-                f.seek(startsecondline)
-            else:
-                f.seek(0)
-                settings.update(header=None)
 
-            firstline = next(csv.reader(f, dialect=dialect))
-            headernames = []
-            for i, item in enumerate(firstline):
-                headernames.append(f'{i}_{self.__check_type(item)}')
             settings.update(
+                dialect=dialect,
                 delimiter=dialect.delimiter,
                 doublequote=dialect.doublequote,
                 escapechar=dialect.escapechar,
@@ -71,7 +63,6 @@ class CsvXmlImporter:
                 quotechar=dialect.quotechar,
                 quoting=dialect.quoting,
                 skipinitialspace=dialect.skipinitialspace,
-                names=headernames,
             )
 
         settings.update(
@@ -80,6 +71,40 @@ class CsvXmlImporter:
         )
 
         return settings
+
+    def __ascertain_header(self, file):
+        settings = {}
+
+        with StringIO(file) as f:
+            sample = f.readline() + f.readline()
+
+            if csv.Sniffer().has_header(sample):
+                settings.update(
+                    header=0
+                )
+            else:
+                f.seek(0)
+                firstline = next(
+                    csv.reader(
+                        f,
+                        delimiter=self.__pdreadcsvsettings["delimiter"],
+                        doublequote=self.__pdreadcsvsettings["doublequote"],
+                        escapechar=self.__pdreadcsvsettings["escapechar"],
+                        quotechar=self.__pdreadcsvsettings["quotechar"],
+                        quoting=self.__pdreadcsvsettings["quoting"],
+                        skipinitialspace=self.__pdreadcsvsettings["skipinitialspace"],
+                    )
+                )
+                headernames = []
+                for i, item in enumerate(firstline):
+                    headernames.append(f'{i}_{self.__check_type(item)}')
+                settings.update(
+                    header=None,
+                    names=headernames
+                )
+
+        return settings
+
 
     @staticmethod
     def __check_type(string):
@@ -129,14 +154,27 @@ class CsvXmlImporter:
                 if filename.endswith(".xml"):
                     self.__filebuffer[i] = self.__read_xml(filename)
 
+            # guess settings but dont override existing ones
+            settings = self.__ascertain_settings(self.__filebuffer[0])
+            self.__pdreadcsvsettings.update(
+                delimiter=settings["delimiter"] if "delimiter" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["delimiter"],
+                doublequote=settings["doublequote"] if "doublequote" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["doublequote"],
+                escapechar=settings["escapechar"] if "escapechar" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["escapechar"],
+                quotechar=settings["quotechar"] if "quotechar" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["quotechar"],
+                quoting=settings["quoting"] if "quoting" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["quoting"],
+                skipinitialspace=settings["skipinitialspace"] if "skipinitialspace" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["skipinitialspace"],
+                true_values=settings["true_values"] if "true_values" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["true_values"],
+                false_values=settings["false_values"] if "false_values" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["false_values"],
+            )
+
             # merge filestrings in buffer to one dataframe
             self.dfx = pd.DataFrame()
             for file in self.__filebuffer:
-                # TODO assertain header names if no header
                 self.dfx = self.dfx.append(
                     pd.read_csv(
                         StringIO(file),
-                        **self.__pdreadcsvsettings
+                        **self.__pdreadcsvsettings,
+                        **self.__ascertain_header(file)
                     )
                 )
 
