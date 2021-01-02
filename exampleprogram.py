@@ -160,9 +160,8 @@ class Program:
         names = askopenfilenames()
         if names:
             try:
-                self.__importer.update_files(names)
                 self.__srcfileslistbox.insert(END, *names)
-                self.__importer.update_files(self.__srcfileslistbox.get(0, END))
+                self.__importer.update_files(*self.__srcfileslistbox.get(0, END))
             except ValueError:
                 showerror(title="Error", message="Could not open files")
                 # TODO reset listbox
@@ -178,7 +177,7 @@ class Program:
 
             x = self.__srcfileslistbox.get(0,END)
             if x:
-                self.__importer.update_files(x)
+                self.__importer.update_files(*x)
             else:
                 self.__importer.reset()
             self.__update_table()
