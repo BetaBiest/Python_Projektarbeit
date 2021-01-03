@@ -20,6 +20,7 @@ class CsvXmlImporter:
             **pdreadcsvsettings
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
+        self.__xslparameter = {}
         self.__filenames = []
 
         if filenames:
@@ -46,10 +47,7 @@ class CsvXmlImporter:
         """ascertain settings by checking file content"""
         settings = {}
         with StringIO(file) as f:
-            sample = f.readline()
-            startsecondline = f.tell()
-            sample += f.readline()
-
+            sample = f.readline() + f.readline()
             dialect = csv.Sniffer().sniff(sample)
 
             settings.update(
@@ -128,6 +126,12 @@ class CsvXmlImporter:
             "Bool": re.compile(
                 "(?i)^(wahr|falsch|true|false|ja|nein)$"
             ),
+            "Int": re.compile(
+                "^\d*$"
+            ),
+            "Float": re.compile(
+                "^\d*(\.|,)\d*$"
+            ),
         }
         for key in types:
             if types[key].match(string):
@@ -152,7 +156,7 @@ class CsvXmlImporter:
                 if filename.endswith(".xml"):
                     self.__filebuffer[i] = self.__read_xml(filename)
 
-            # guess settings but dont override existing ones
+            # guess settings without overwriting existing ones
             settings = self.__ascertain_settings(self.__filebuffer[0])
             self.__pdreadcsvsettings.update(
                 delimiter=settings["delimiter"] if "delimiter" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["delimiter"],
