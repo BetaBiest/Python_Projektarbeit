@@ -1,9 +1,12 @@
-from pandastable import Table, TableModel
-from tkinter import Menu, Listbox, StringVar, BooleanVar, IntVar
+from codecs import escape_decode
+from io import StringIO
+from tkinter import Menu, Listbox, Text, StringVar, BooleanVar, IntVar
 from tkinter.constants import E, W, X, END
-from tkinter.filedialog import askopenfilenames
+from tkinter.filedialog import askopenfilename, askopenfilenames
 from tkinter.messagebox import showerror, showinfo
-from tkinter.ttk import Combobox, Frame, LabelFrame, Button, Label, Radiobutton, Checkbutton, Entry
+from tkinter.ttk import Combobox, Frame, LabelFrame, Button, Label, Radiobutton, Checkbutton, Entry, Scrollbar
+
+from pandastable import Table, TableModel
 from ttkthemes import ThemedTk
 
 from csvxmlimporter import CsvXmlImporter
@@ -40,7 +43,6 @@ class Program:
         helpmenu.add_command(label="?", command=self.ask_help)
         helpmenu.add_command(label="About", command=self.ask_about)
 
-
         # ***---*** source file frame dialog ***---***
         srcfilesframe = LabelFrame(self.__root, text="Sourcefiles")
         buttonframe = Frame(srcfilesframe)
@@ -57,7 +59,7 @@ class Program:
                                  command=self.remove_all)
         removeallbutton.pack(fill=X)
         buttonframe.grid(column=1, row=1)
-        self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended", width=100)
+        self.__srcfileslistbox = Listbox(srcfilesframe, selectmode="extended", width=100, height=5)
         self.__srcfileslistbox.grid(column=2, row=1)
 
         Label(srcfilesframe, text="Encoding").grid(column=1, row=2, sticky=E)
@@ -69,11 +71,24 @@ class Program:
         encCombobox.grid(column=2, row=2, pady=10)
         srcfilesframe.pack(fill=X)
 
-
         # TODO implement xsl file dialog
         # ***---*** xsl file dialog ***---***
-        # xslfileframe = LabelFrame(self.__root, text="XSL-File")
-
+        xslfileframe = LabelFrame(self.__root, text="XSL-File")
+        Button(xslfileframe, text="Add .xsl", command=self.add_xslfile).grid(column=1, row=1)
+        self.__xsllistbox = Listbox(xslfileframe, width=100, height=1)
+        self.__xsllistbox.grid(column=2, row=1, sticky="w")
+        buttonframe = Frame(xslfileframe)
+        Button(buttonframe, text="Apply Parameter", command=self.apply_xslparameter).pack(fill=X)
+        Button(buttonframe, text="Restore Default", command=self.reset_xslparameter).pack(fill=X)
+        buttonframe.grid(column=1, row=2)
+        box = Frame(xslfileframe)
+        self.__xslparametertext = Text(box, height=3, width=75)
+        self.__xslparametertext.grid(column=0, row=1, sticky="nsew")
+        scrollbar = Scrollbar(box, command=self.__xslparametertext.yview)
+        scrollbar.grid(column=0, row=1, sticky="nse")
+        box.grid(column=2, row=2, sticky="we")
+        self.__xslparametertext["yscrollcommand"] = scrollbar.set
+        xslfileframe.pack(fill=X)
 
         # ***---*** file format settings dialog ***---***
         # small help function
@@ -104,8 +119,6 @@ class Program:
         self.__settings["doublequote"] = BooleanVar()
         Checkbutton(fileformatsettingsframe, variable=self.__settings["doublequote"],
                     command=self.update_settings).grid(column=2, row=3, sticky=W, padx=10)
-        #make_radiobuttons(self.__settings["doublequote"], markingoptions, 2, 3, self.update_settings)
-
 
         Label(fileformatsettingsframe, text="Quoting").grid(column=1, row=5, sticky=E)
         quotingopt = {
@@ -121,7 +134,7 @@ class Program:
                         value=value,
                         variable=self.__settings["quoting"],
                         command=self.update_settings,
-                        ).grid(column=2+i,
+                        ).grid(column=2 + i,
                                row=5,
                                padx=10,
                                sticky=W,
@@ -134,7 +147,6 @@ class Program:
                     command=self.update_settings).grid(column=2, row=6, sticky=W, padx=10)
 
         fileformatsettingsframe.pack(fill=X)
-
 
         # ***---*** preview frame ***---***
         previewframe = LabelFrame(self.__root, text="Preview")
@@ -152,13 +164,17 @@ class Program:
         self.__root.destroy()
 
     def add_files(self):
-        names = askopenfilenames()
+        names = askopenfilenames(
+            title="Select .csv or .xml files",
+            filetypes=(("any", "*.*"), ("Csv File", "*.csv"), ("Xml File", "*.xml"))
+        )
         if names:
             try:
                 self.__srcfileslistbox.insert(END, *names)
                 self.__importer.update_files(*self.__srcfileslistbox.get(0, END))
-            except AttributeError as _:
+            except AttributeError as e:
                 showerror(title="Error", message="No .xsl file set")
+                raise e
             except ValueError as _:
                 showerror(title="Error", message="Could not open files")
                 self.__srcfileslistbox.delete(0, END)
@@ -172,7 +188,7 @@ class Program:
             for i in itemstodelete:
                 self.__srcfileslistbox.delete(i)
 
-            x = self.__srcfileslistbox.get(0,END)
+            x = self.__srcfileslistbox.get(0, END)
             if x:
                 self.__importer.update_files(*x)
             else:
@@ -183,6 +199,34 @@ class Program:
         self.__srcfileslistbox.delete(0, END)
         self.__importer.reset()
         self.__update_table()
+
+    def add_xslfile(self):
+        filename = askopenfilename(
+            title="Select .xsl file",
+            filetypes=(("Xsl File", "*.xsl"),)
+        )
+        if filename:
+            self.__importer.set_xslfile(filename)
+            self.__xsllistbox.insert(0, filename)
+            self.reset_xslparameter()
+
+    def apply_xslparameter(self):
+        """apply_xslparameter reads userinput from textbox and parses input in dict"""
+        param = self.__xslparametertext.get("1.0", END)
+        with StringIO(param) as f:
+            lines = [line[:-1] for line in f.readlines()]
+            # escape_decode removes extra escapes added through reading the text
+            d = {x.split("=")[0]: escape_decode(x.split("=")[1])[0] for x in lines if x}
+            self.__importer.set_xslparameter(**d)
+
+    def reset_xslparameter(self):
+        self.__xslparametertext.delete("1.0", END)
+        # FIXME this doesn´t ensure parameters are default! Only uses previously set once!
+        param = self.__importer.get_xslparameter()
+        s = ""
+        for key, item in param.items():
+            s += repr(key + "=" + item)[1:-1] + '\n'
+        self.__xslparametertext.insert("1.0", s)
 
     @staticmethod
     def __unpack_settings(settings):

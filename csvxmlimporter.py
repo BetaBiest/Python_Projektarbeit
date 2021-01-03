@@ -2,11 +2,11 @@ import csv
 import re
 from io import StringIO
 from pathlib import Path
+from typing import Optional, Dict, List
 
 import pandas as pd
 from chardet import detect
 from lxml import etree
-from typing import Optional, Dict, List
 
 
 class CsvXmlImporter:
@@ -37,7 +37,7 @@ class CsvXmlImporter:
 
     def __read_csv(self, filename):
         enc = detect(Path(filename).read_bytes())["encoding"]
-        self.__pdreadcsvsettings.update(encoding=enc) # TODO maybe delete this
+        self.__pdreadcsvsettings.update(encoding=enc)  # TODO maybe delete this
         return Path(filename).read_text(encoding=enc)
 
     def __read_xml(self, filename):
@@ -101,7 +101,6 @@ class CsvXmlImporter:
 
         return settings
 
-
     @staticmethod
     def __check_type(string):
         """check whether given input string matches any of the predetermined types
@@ -159,14 +158,22 @@ class CsvXmlImporter:
             # guess settings without overwriting existing ones
             settings = self.__ascertain_settings(self.__filebuffer[0])
             self.__pdreadcsvsettings.update(
-                delimiter=settings["delimiter"] if "delimiter" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["delimiter"],
-                doublequote=settings["doublequote"] if "doublequote" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["doublequote"],
-                escapechar=settings["escapechar"] if "escapechar" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["escapechar"],
-                quotechar=settings["quotechar"] if "quotechar" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["quotechar"],
-                quoting=settings["quoting"] if "quoting" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["quoting"],
-                skipinitialspace=settings["skipinitialspace"] if "skipinitialspace" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["skipinitialspace"],
-                true_values=settings["true_values"] if "true_values" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["true_values"],
-                false_values=settings["false_values"] if "false_values" not in self.__pdreadcsvsettings else self.__pdreadcsvsettings["false_values"],
+                delimiter=settings["delimiter"] if "delimiter" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["delimiter"],
+                doublequote=settings["doublequote"] if "doublequote" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["doublequote"],
+                escapechar=settings["escapechar"] if "escapechar" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["escapechar"],
+                quotechar=settings["quotechar"] if "quotechar" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["quotechar"],
+                quoting=settings["quoting"] if "quoting" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["quoting"],
+                skipinitialspace=settings["skipinitialspace"] if "skipinitialspace" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["skipinitialspace"],
+                true_values=settings["true_values"] if "true_values" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["true_values"],
+                false_values=settings["false_values"] if "false_values" not in self.__pdreadcsvsettings else
+                self.__pdreadcsvsettings["false_values"],
             )
 
             # merge filestrings in buffer to one dataframe
@@ -181,10 +188,15 @@ class CsvXmlImporter:
                 )
 
     def set_xslfile(self, filename):
-        self.__xmltransformer = etree.XSLT(etree.parse(filename))
+        tree = etree.parse(filename)
+        self.__xmltransformer = etree.XSLT(tree)
+        self.__xslparameter = {x.attrib["name"]: x.attrib["select"] for x in tree.getroot() if "param" in x.tag}
 
     def set_xslparameter(self, **kwargs):
         self.__xslparameter = kwargs
+
+    def get_xslparameter(self):
+        return self.__xslparameter
 
     def reset(self):
         self.dfx = pd.DataFrame()
