@@ -16,7 +16,7 @@ class CsvXmlImporter:
 
     def __init__(
             self,
-            filenames: Optional[str or list] = None,
+            filenames: Optional[str or list] = [],
             **pdreadcsvsettings
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
@@ -205,9 +205,10 @@ class CsvXmlImporter:
             return self.__xslparameter
 
     def reset(self):
+        """reset sets the object"""
         self.dfx = pd.DataFrame()
         self.__pdreadcsvsettings = {}
-        self.__filenames = None
+        self.__filenames = []
 
     def set_settings(self, **kwargs):
         """applies new passed parameters and reloads files with new settings"""
@@ -217,12 +218,14 @@ class CsvXmlImporter:
     def get_settings(self):
         return self.__pdreadcsvsettings
 
-    def return_dict(self):
-        return self.dfx.to_dict()
+    def to_dict(self, **kwargs):
+        return self.dfx.to_dict(**kwargs)
+
+    def to_csv(self, **kwargs):
+        return self.dfx.to_csv(**kwargs)
 
     def return_pddf(self):
         return self.dfx
 
-    def return_nparray(self):
-        # TODO check if all columns contain numbers, if true return nparray
-        pass
+    def to_numpy(self, **kwargs):
+        return self.dfx.to_numpy(**kwargs)
