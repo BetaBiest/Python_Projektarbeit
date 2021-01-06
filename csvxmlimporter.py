@@ -21,6 +21,7 @@ class CsvXmlImporter:
     ):
         self.__pdreadcsvsettings = pdreadcsvsettings
         self.__xslparameter = {}
+        self.__xsldefaultparameter = {}
         self.__filenames = []
 
         if filenames:
@@ -191,12 +192,17 @@ class CsvXmlImporter:
         tree = etree.parse(filename)
         self.__xmltransformer = etree.XSLT(tree)
         self.__xslparameter = {x.attrib["name"]: x.attrib["select"] for x in tree.getroot() if "param" in x.tag}
+        self.__xsldefaultparameter = self.__xslparameter
 
     def set_xslparameter(self, **kwargs):
         self.__xslparameter = kwargs
 
-    def get_xslparameter(self):
-        return self.__xslparameter
+    def get_xslparameter(self, default=False):
+        """get_xslparameter returns the default from xsl if default is set to true else currently set once"""
+        if default:
+            return self.__xsldefaultparameter
+        else:
+            return self.__xslparameter
 
     def reset(self):
         self.dfx = pd.DataFrame()

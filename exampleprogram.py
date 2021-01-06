@@ -218,11 +218,14 @@ class Program:
             # escape_decode removes extra escapes added through reading the text
             d = {x.split("=")[0]: escape_decode(x.split("=")[1])[0] for x in lines if x}
             self.__importer.set_xslparameter(**d)
+        if not self.__importer.dfx.empty:
+            self.__importer.update_files()
+            self.__update_table()
 
     def reset_xslparameter(self):
         self.__xslparametertext.delete("1.0", END)
         # FIXME this doesn´t ensure parameters are default! Only uses previously set once!
-        param = self.__importer.get_xslparameter()
+        param = self.__importer.get_xslparameter(default=True)
         s = ""
         for key, item in param.items():
             s += repr(key + "=" + item)[1:-1] + '\n'
