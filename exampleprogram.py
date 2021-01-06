@@ -2,10 +2,11 @@ from codecs import escape_decode
 from io import StringIO
 from tkinter import Menu, Listbox, Text, StringVar, BooleanVar, IntVar
 from tkinter.constants import E, W, X, END
-from tkinter.filedialog import askopenfilename, askopenfilenames
+from tkinter.filedialog import askopenfilename, askopenfilenames, asksaveasfilename
 from tkinter.messagebox import showerror, showinfo
 from tkinter.ttk import Combobox, Frame, LabelFrame, Button, Label, Radiobutton, Checkbutton, Entry, Scrollbar
 
+from pandas import DataFrame
 from pandastable import Table, TableModel
 from ttkthemes import ThemedTk
 
@@ -18,6 +19,8 @@ encodings = (
     "windows-1250", "ISO-8859-5", "windows-1251", "ISO-8859-1", "windows-1252", "ISO-8859-7", "windows-1253",
     "ISO-8859-8", "windows-1255", "TIS-620", "UTF-32", "UTF-16", "UTF-8", "ascii")
 
+theme = "equilux"
+
 
 class Program:
     """Exampleprogram to show possible usage of the model csvxmlImporter"""
@@ -27,7 +30,7 @@ class Program:
         self.__settings = {}
         self.__importer = CsvXmlImporter()
 
-        self.__root = ThemedTk(theme="equilux")
+        self.__root = ThemedTk(theme=theme)
         self.__root.title("Csv/Xml Importer")
         self.__root.minsize(560, 1)
         menu = Menu(self.__root)
@@ -36,7 +39,7 @@ class Program:
         filemenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="File", menu=filemenu)
         menu.add_separator()
-        filemenu.add_command(label="Exit", command=self.exit_program)
+        filemenu.add_command(label="Exit", command=self.exit)
 
         helpmenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="Help", menu=helpmenu)
@@ -152,7 +155,12 @@ class Program:
         previewframe = LabelFrame(self.__root, text="Preview")
         self.__pdtable = Table(parent=previewframe, dataframe=self.__importer.dfx)
         self.__pdtable.show()
-        previewframe.pack(fill='both', expand=True)
+        previewframe.pack(fill="both", expand=True)
+
+        # ***---*** export button ***---***
+        exportframe = LabelFrame(self.__root, text="Export")
+        Button(exportframe, text="Export", command=self.create_exportdialog).pack()
+        exportframe.pack(fill="both", expand=True)
 
         # save settings to check for changes on update
         self.__prevsettings = self.__unpack_settings(self.__settings)
@@ -160,7 +168,7 @@ class Program:
     def run(self):
         self.__root.mainloop()
 
-    def exit_program(self):
+    def exit(self):
         self.__root.destroy()
 
     def add_files(self):
@@ -268,6 +276,47 @@ class Program:
         showinfo(title="About",
                  message="Projektarbeit Python\nAuthor: Leo Schurrer\nDate: 19/12/20"
                  )
+
+    def create_exportdialog(self):
+        self.ExportDialog(self.__importer.dfx).run()
+
+    class ExportDialog:
+        def __init__(self, df: DataFrame):
+            self.__root = ThemedTk(theme=theme)
+            self.__root.title("Export")
+            self.__df = df
+
+            frame = Frame(self.__root)
+            Label(frame, text="Seperator").grid(column=1, row=1)
+            self.__separator = StringVar(self.__root, value=",")
+            Entry(frame, textvariable=self.__separator).grid(column=2, row=1)
+
+            Label(frame, text="Encoding").grid(column=1, row=2)
+            self.__encoding = StringVar(self.__root, value="UTF-8")
+            Combobox(frame, textvariable=self.__encoding, values=encodings, state="readonly").grid(column=2, row=2)
+            frame.pack(fill="both", expand=True)
+
+            frame = Frame(self.__root)
+            Button(frame, text="Save", command=self.export_csv).pack()
+            frame.pack(fill="both", expand=True)
+
+        def run(self):
+            self.__root.mainloop()
+
+        def exit(self):
+            self.__root.destroy()
+
+        def export_csv(self):
+            e = self.__encoding.get()
+            s = self.__separator.get()
+            destination = asksaveasfilename(defaultextension=".csv", filetypes=(("Csv File", "*.csv"),), initialfile="export.csv")
+            if destination:
+                try:
+                    self.__df.to_csv(destination, sep=s, encoding=e)
+                except ValueError:
+                    showerror(text="Oops. Something went wrong. Please try again.")
+                finally:
+                    self.exit()
 
 
 if __name__ == "__main__":
