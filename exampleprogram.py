@@ -67,14 +67,13 @@ class Program:
 
         Label(srcfilesframe, text="Encoding").grid(column=1, row=2, sticky=E)
         self.__settings["encoding"] = StringVar()
+        self.__settings["encoding"].trace_add("write", self.update_settings)
         encCombobox = Combobox(srcfilesframe, textvariable=self.__settings["encoding"], values=encodings,
                                state="readonly")
-        # TODO find better option for update
         encCombobox.bind("<FocusOut>", self.update_settings)
         encCombobox.grid(column=2, row=2, pady=10)
         srcfilesframe.pack(fill=X)
 
-        # TODO implement xsl file dialog
         # ***---*** xsl file dialog ***---***
         xslfileframe = LabelFrame(self.__root, text="XSL-File")
         Button(xslfileframe, text="Add .xsl", command=self.add_xslfile).grid(column=1, row=1)
@@ -105,7 +104,7 @@ class Program:
         Label(fileformatsettingsframe, text="Delimiter").grid(column=1, row=1, sticky=E)
         self.__settings["delimiter"] = StringVar()
         seperatorentry = Entry(fileformatsettingsframe, textvariable=self.__settings["delimiter"], width=1)
-        self.__settings["delimiter"].trace("w", lambda *_: limit_character(self.__settings["delimiter"]))
+        self.__settings["delimiter"].trace_add("write", lambda *_: limit_character(self.__settings["delimiter"]))
         seperatorentry.bind("<Return>", self.update_settings)
         seperatorentry.bind("<FocusOut>", self.update_settings)
         seperatorentry.grid(column=2, row=1, sticky=W, padx=15)
@@ -113,7 +112,7 @@ class Program:
         Label(fileformatsettingsframe, text="Quotechar").grid(column=1, row=2, sticky=E)
         self.__settings["quotechar"] = StringVar()
         quotecharentry = Entry(fileformatsettingsframe, textvariable=self.__settings["quotechar"], width=1)
-        self.__settings["quotechar"].trace("w", lambda *_: limit_character(self.__settings["quotechar"]))
+        self.__settings["quotechar"].trace_add("write", lambda *_: limit_character(self.__settings["quotechar"]))
         quotecharentry.bind("<Return>", self.update_settings)
         quotecharentry.bind("<FocusOut>", self.update_settings)
         quotecharentry.grid(column=2, row=2, sticky=W, padx=15)
@@ -232,7 +231,6 @@ class Program:
 
     def reset_xslparameter(self):
         self.__xslparametertext.delete("1.0", END)
-        # FIXME this doesn´t ensure parameters are default! Only uses previously set once!
         param = self.__importer.get_xslparameter(default=True)
         s = ""
         for key, item in param.items():
@@ -269,7 +267,11 @@ class Program:
 
     def ask_help(self):
         showinfo(title="Help",
-                 message="To import files select Add Files\nTo export select Export and choose the desired format"
+                 message="""\
+    To import files select Add Files
+    For .xml import first add a .xsl file.
+    To export select Export and set desired parameters\
+    """
                  )
 
     def ask_about(self):
@@ -309,7 +311,8 @@ class Program:
         def export_csv(self):
             e = self.__encoding.get()
             s = self.__separator.get()
-            destination = asksaveasfilename(defaultextension=".csv", filetypes=(("Csv File", "*.csv"),), initialfile="export.csv")
+            destination = asksaveasfilename(defaultextension=".csv", filetypes=(("Csv File", "*.csv"),),
+                                            initialfile="export.csv")
             if destination:
                 try:
                     self.__df.to_csv(destination, sep=s, encoding=e)
