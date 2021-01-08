@@ -10,9 +10,11 @@ from lxml import etree
 
 
 class CsvXmlImporter:
-    __filenames: List[str] or None
+    __filenames: List[str]
     dfx: pd.DataFrame
     __pdreadcsvsettings: Optional[Dict]
+    __xslparameter: Dict
+    __xsldefaultparameter: Dict
 
     def __init__(
             self,
@@ -31,21 +33,23 @@ class CsvXmlImporter:
 
     @staticmethod
     def __validate_filenames(*filenames):
-        """check if all given filenames are correct"""
+        """check if all given filenames have correct file extension"""
         for filename in filenames:
             if not filename.endswith((".xml", ".csv")):
                 raise ValueError(f'File {filename} has invalid file extension')
 
     def __read_csv(self, filename):
+        """__read_csv opens a given csv file and return its content as text"""
         enc = detect(Path(filename).read_bytes())["encoding"]
-        self.__pdreadcsvsettings.update(encoding=enc)  # TODO maybe delete this
+        self.__pdreadcsvsettings.update(encoding=enc)  # save encoding
         return Path(filename).read_text(encoding=enc)
 
     def __read_xml(self, filename):
+        """__read_xml opens a given xml file and return its content as csv text"""
         return str(self.__xmltransformer(etree.parse(filename), **self.__xslparameter))
 
     def __ascertain_settings(self, file):
-        """ascertain settings by checking file content"""
+        """__ascertain_settings returns settings for csv file by checking its file content"""
         settings = {}
         with StringIO(file) as f:
             sample = f.readline() + f.readline()
@@ -70,6 +74,7 @@ class CsvXmlImporter:
         return settings
 
     def __ascertain_header(self, file):
+        """__ascertain_header returns an dic with information about the header of a given csv file"""
         settings = {}
 
         with StringIO(file) as f:
@@ -139,6 +144,10 @@ class CsvXmlImporter:
         return "String"
 
     def update_files(self, *filenames: str):
+        """update_files can be called in two scenarios
+            1. without parameters after changing the settings to reread the files with new settings
+            2. with parameter to read in new files
+            """
         # read csv files as string into buffer
         if filenames and [*filenames] != self.__filenames:
             self.__validate_filenames(*filenames)
@@ -152,6 +161,7 @@ class CsvXmlImporter:
 
         if self.__filenames:
             # read xml files as csv string into buffer
+            # xml have to be read in new everytime to ensure a change in xsl parameters gets applied
             for i, filename in enumerate(self.__filenames):
                 if filename.endswith(".xml"):
                     self.__filebuffer[i] = self.__read_xml(filename)
@@ -189,12 +199,15 @@ class CsvXmlImporter:
                 )
 
     def set_xslfile(self, filename):
+        """set_xslfile sets a new .xsl file to use for converting .xml files to .csv"""
         tree = etree.parse(filename)
         self.__xmltransformer = etree.XSLT(tree)
         self.__xslparameter = {x.attrib["name"]: x.attrib["select"] for x in tree.getroot() if "param" in x.tag}
         self.__xsldefaultparameter = self.__xslparameter
 
     def set_xslparameter(self, **kwargs):
+        """set_xslparameter set what parameter to use for the .xml -> .csv conversion
+            use get_xslparameter with default=True to identify possible parameters"""
         self.__xslparameter = kwargs
 
     def get_xslparameter(self, default=False):
@@ -205,7 +218,8 @@ class CsvXmlImporter:
             return self.__xslparameter
 
     def reset(self):
-        """reset sets the object"""
+        """reset resets the object in its default state without any parameters
+            note that prev set .xsl file and parameters are not affected"""
         self.dfx = pd.DataFrame()
         self.__pdreadcsvsettings = {}
         self.__filenames = []
@@ -219,13 +233,17 @@ class CsvXmlImporter:
         return self.__pdreadcsvsettings
 
     def to_dict(self, **kwargs):
+        """to_dict syntax sugar see pandas.Dataframe.to_dict() docs for more information"""
         return self.dfx.to_dict(**kwargs)
 
     def to_csv(self, **kwargs):
+        """to_csv syntax sugar see pandas.Dataframe.to_csv() docs for more information"""
         return self.dfx.to_csv(**kwargs)
 
-    def return_pddf(self):
-        return self.dfx
-
     def to_numpy(self, **kwargs):
+        """to_numpy syntax sugar see pandas.Dataframe.to_numpy() docs for more information"""
         return self.dfx.to_numpy(**kwargs)
+
+    def return_pddf(self):
+        """return_pddf returns the pandas dataframe that is used to store the combined files"""
+        return self.dfx
