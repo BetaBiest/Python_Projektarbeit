@@ -7,4 +7,5 @@ examplefiles
 *.xml
 *.xsl
 *.docx
+*.vsdx
 *.pdf
