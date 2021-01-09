@@ -8,6 +8,35 @@ import pandas as pd
 from chardet import detect
 from lxml import etree
 
+# regular expressions for typchecking strings
+types = {
+    "Coordinate": re.compile(
+        "^(N|S)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(1)|(N|S)) (E|W)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(5)|(E|W))$"
+    ),
+    # email regex source: https://stackoverflow.com/questions/201323/how-to-validate-an-email-address-using-a-regular-expression
+    "Email": re.compile(
+        "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    ),
+    "Web-URL": re.compile(
+        "^((ftp|http|https):\/\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+((\/)[\w#]+)*(\/\w+\?[a-zA-Z0-9_]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$"
+    ),
+    "Time": re.compile(
+        "^[0-2]\d:[0-6]\d:[0-6]\d$"
+    ),
+    "Date": re.compile(
+        "^[0-3]?[0-9][/.][0-3]?[0-9][/.](?:[0-9]{2})?[0-9]{2}$"
+    ),
+    "Bool": re.compile(
+        "(?i)^(wahr|falsch|true|false|ja|nein)$"
+    ),
+    "Int": re.compile(
+        "^\d*$"
+    ),
+    "Float": re.compile(
+        "^\d*(\.|,)\d*$"
+    ),
+}
+
 
 class CsvXmlImporter:
     __filenames: List[str]
@@ -113,33 +142,6 @@ class CsvXmlImporter:
     def __check_type(string):
         """check whether given input string matches any of the predetermined types
             returns matching type or 'String'"""
-        types = {
-            "Coordinate": re.compile(
-                "^(N|S)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(1)|(N|S)) (E|W)?0*\d{1,2}°0*\d{1,2}(′|')0*\d{1,2}\.\d*(″|\")(?(5)|(E|W))$"
-            ),
-            # email regex source: https://stackoverflow.com/questions/201323/how-to-validate-an-email-address-using-a-regular-expression
-            "Email": re.compile(
-                "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-            ),
-            "Web-URL": re.compile(
-                "^((ftp|http|https):\/\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+((\/)[\w#]+)*(\/\w+\?[a-zA-Z0-9_]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$"
-            ),
-            "Time": re.compile(
-                "^[0-2]\d:[0-6]\d:[0-6]\d$"
-            ),
-            "Date": re.compile(
-                "^[0-3]?[0-9][/.][0-3]?[0-9][/.](?:[0-9]{2})?[0-9]{2}$"
-            ),
-            "Bool": re.compile(
-                "(?i)^(wahr|falsch|true|false|ja|nein)$"
-            ),
-            "Int": re.compile(
-                "^\d*$"
-            ),
-            "Float": re.compile(
-                "^\d*(\.|,)\d*$"
-            ),
-        }
         for key in types:
             if types[key].match(string):
                 return key
