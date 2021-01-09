@@ -2,6 +2,9 @@ venv
 .vscode
 .idea
 __pycache__
+examplefiles
 *.csv
 *.xml
 *.xsl
+*.docx
+*.pdf
