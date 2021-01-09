@@ -11,6 +11,7 @@ from lxml import etree
 
 class CsvXmlImporter:
     __filenames: List[str]
+    __filebuffer: List[str]
     dfx: pd.DataFrame
     __pdreadcsvsettings: Optional[Dict]
     __xslparameter: Dict
@@ -25,6 +26,7 @@ class CsvXmlImporter:
         self.__xslparameter = {}
         self.__xsldefaultparameter = {}
         self.__filenames = []
+        self.__filebuffer = []
 
         if filenames:
             self.update_files(*filenames if type(filenames) == list else filenames)
@@ -152,7 +154,7 @@ class CsvXmlImporter:
         if filenames and [*filenames] != self.__filenames:
             self.__validate_filenames(*filenames)
 
-            self.__filebuffer = [None] * len(filenames)  # TODO move to __init__
+            self.__filebuffer = [""] * len(filenames)
             for i, filename in enumerate(filenames):
                 if filename.endswith(".csv"):
                     self.__filebuffer[i] = self.__read_csv(filename)
