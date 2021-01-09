@@ -19,17 +19,20 @@ encodings = (
     "windows-1250", "ISO-8859-5", "windows-1251", "ISO-8859-1", "windows-1252", "ISO-8859-7", "windows-1253",
     "ISO-8859-8", "windows-1255", "TIS-620", "UTF-32", "UTF-16", "UTF-8", "ascii")
 
+# theme to use for the interface
 theme = "equilux"
 
 
 class Program:
-    """Exampleprogram to show possible usage of the model csvxmlImporter"""
+    """Exampleprogram to show possible usage of the module csvxmlImporter"""
     __importer: CsvXmlImporter
 
     def __init__(self):
+        """__init__ creates the tkinter gui"""
         self.__settings = {}
         self.__importer = CsvXmlImporter()
 
+        # ***--*** main window and menu band ***---***
         self.__root = ThemedTk(theme=theme)
         self.__root.title("Csv/Xml Importer")
         self.__root.minsize(560, 1)
@@ -95,6 +98,7 @@ class Program:
         # ***---*** file format settings dialog ***---***
         # small help function
         def limit_character(entry_text):
+            """limit_characters cuts down the characters of an entry text to one"""
             if len(entry_text.get()) > 0:
                 # take only last input character and throw away the rest
                 entry_text.set(entry_text.get()[-1])
@@ -165,12 +169,15 @@ class Program:
         self.__prevsettings = self.__unpack_settings(self.__settings)
 
     def run(self):
+        """run starts the mainloop of tkinter gui"""
         self.__root.mainloop()
 
     def exit(self):
+        """exit closes tkinter application"""
         self.__root.destroy()
 
     def add_files(self):
+        """add_files called by user to add files via dialog"""
         names = askopenfilenames(
             title="Select .csv or .xml files",
             filetypes=(("any", "*.*"), ("Csv File", "*.csv"), ("Xml File", "*.xml"))
@@ -190,6 +197,7 @@ class Program:
             self.__update_dialog()
 
     def remove_files(self):
+        """remove_files called by user to remove in listbox selected files"""
         itemstodelete = self.__srcfileslistbox.curselection()
         if itemstodelete:
             for i in itemstodelete:
@@ -203,11 +211,13 @@ class Program:
             self.__update_table()
 
     def remove_all(self):
+        """remove_all called by user to remove all imported files"""
         self.__srcfileslistbox.delete(0, END)
         self.__importer.reset()
         self.__update_table()
 
     def add_xslfile(self):
+        """add_xslfile called to open .xsl file via dialog"""
         filename = askopenfilename(
             title="Select .xsl file",
             filetypes=(("Xsl File", "*.xsl"),)
@@ -230,6 +240,7 @@ class Program:
             self.__update_table()
 
     def reset_xslparameter(self):
+        """reset_xslparameter restores default values for xslparameters"""
         self.__xslparametertext.delete("1.0", END)
         param = self.__importer.get_xslparameter(default=True)
         s = ""
@@ -243,16 +254,19 @@ class Program:
         return dict((key, settings[key].get()) for key in settings)
 
     def __update_table(self):
+        """__update_table updates pandastable to display the actual dataframe"""
         self.__pdtable.updateModel(TableModel(self.__importer.dfx))
         self.__pdtable.redraw()
 
     def __update_dialog(self):
+        """__update_dialog updates the input fields with settings from the importer"""
         importersettings = self.__importer.get_settings()
         for key in self.__settings:
             if key in importersettings:
                 self.__settings[key].set(importersettings[key])
 
     def update_settings(self, *_):
+        """update_settings reads input fields and applies the user input to the importer"""
         newsettings = self.__unpack_settings(self.__settings)
         if newsettings != self.__prevsettings:
             # figure out which settings changed
@@ -283,6 +297,8 @@ class Program:
         self.ExportDialog(self.__importer.dfx).run()
 
     class ExportDialog:
+        """ExportDialog provides a window to save a dataframe to csv file with custom settings"""
+
         def __init__(self, df: DataFrame):
             self.__root = ThemedTk(theme=theme)
             self.__root.title("Export")
