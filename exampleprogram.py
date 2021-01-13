@@ -26,6 +26,7 @@ theme = "equilux"
 class Program:
     """Exampleprogram to show possible usage of the module csvxmlImporter"""
     __importer: CsvXmlImporter
+    __settings: dict
 
     def __init__(self):
         """__init__ creates the tkinter gui"""
@@ -41,7 +42,11 @@ class Program:
 
         filemenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="File", menu=filemenu)
-        menu.add_separator()
+        filemenu.add_command(label="Add Files", command=self.add_files)
+        filemenu.add_command(label="Remove All", command=self.remove_all)
+        filemenu.add_separator()
+        filemenu.add_command(label="Add xsl File", command=self.add_xslfile)
+        filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.exit)
 
         helpmenu = Menu(menu, tearoff=0)
@@ -188,7 +193,6 @@ class Program:
                 self.__importer.update_files(*self.__srcfileslistbox.get(0, END))
             except AttributeError as e:
                 showerror(title="Error", message="No .xsl file set")
-                raise e
             except ValueError as _:
                 showerror(title="Error", message="Could not open files")
                 self.__srcfileslistbox.delete(0, END)
@@ -271,8 +275,6 @@ class Program:
         if newsettings != self.__prevsettings:
             # figure out which settings changed
             changedsettings = dict(newsettings.items() - self.__prevsettings.items())
-            for key in changedsettings:
-                print(f'Key: {key}, Value: {changedsettings[key]}')
 
             self.__importer.set_settings(**changedsettings)
             self.__prevsettings = newsettings
@@ -294,48 +296,49 @@ class Program:
                  )
 
     def create_exportdialog(self):
-        self.ExportDialog(self.__importer.dfx).run()
+        ExportDialog(self.__importer.dfx).run()
 
-    class ExportDialog:
-        """ExportDialog provides a window to save a dataframe to csv file with custom settings"""
 
-        def __init__(self, df: DataFrame):
-            self.__root = ThemedTk(theme=theme)
-            self.__root.title("Export")
-            self.__df = df
+class ExportDialog:
+    """ExportDialog provides a window to save a dataframe to csv file with custom settings"""
 
-            frame = Frame(self.__root)
-            Label(frame, text="Seperator").grid(column=1, row=1)
-            self.__separator = StringVar(self.__root, value=",")
-            Entry(frame, textvariable=self.__separator).grid(column=2, row=1)
+    def __init__(self, df: DataFrame):
+        self.__root = ThemedTk(theme=theme)
+        self.__root.title("Export")
+        self.__df = df
 
-            Label(frame, text="Encoding").grid(column=1, row=2)
-            self.__encoding = StringVar(self.__root, value="UTF-8")
-            Combobox(frame, textvariable=self.__encoding, values=encodings, state="readonly").grid(column=2, row=2)
-            frame.pack(fill="both", expand=True)
+        frame = Frame(self.__root)
+        Label(frame, text="Seperator").grid(column=1, row=1)
+        self.__separator = StringVar(self.__root, value=",")
+        Entry(frame, textvariable=self.__separator).grid(column=2, row=1)
 
-            frame = Frame(self.__root)
-            Button(frame, text="Save", command=self.export_csv).pack()
-            frame.pack(fill="both", expand=True)
+        Label(frame, text="Encoding").grid(column=1, row=2)
+        self.__encoding = StringVar(self.__root, value="UTF-8")
+        Combobox(frame, textvariable=self.__encoding, values=encodings, state="readonly").grid(column=2, row=2)
+        frame.pack(fill="both", expand=True)
 
-        def run(self):
-            self.__root.mainloop()
+        frame = Frame(self.__root)
+        Button(frame, text="Save", command=self.export_csv).pack()
+        frame.pack(fill="both", expand=True)
 
-        def exit(self):
-            self.__root.destroy()
+    def run(self):
+        self.__root.mainloop()
 
-        def export_csv(self):
-            e = self.__encoding.get()
-            s = self.__separator.get()
-            destination = asksaveasfilename(defaultextension=".csv", filetypes=(("Csv File", "*.csv"),),
-                                            initialfile="export.csv")
-            if destination:
-                try:
-                    self.__df.to_csv(destination, sep=s, encoding=e)
-                except ValueError:
-                    showerror(text="Oops. Something went wrong. Please try again.")
-                finally:
-                    self.exit()
+    def exit(self):
+        self.__root.destroy()
+
+    def export_csv(self):
+        e = self.__encoding.get()
+        s = self.__separator.get()
+        destination = asksaveasfilename(defaultextension=".csv", filetypes=(("Csv File", "*.csv"),),
+                                        initialfile="export.csv")
+        if destination:
+            try:
+                self.__df.to_csv(destination, sep=s, encoding=e)
+            except ValueError:
+                showerror(text="Oops. Something went wrong. Please try again.")
+            finally:
+                self.exit()
 
 
 if __name__ == "__main__":
