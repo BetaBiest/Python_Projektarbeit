@@ -45,6 +45,7 @@ class CsvXmlImporter:
     __pdreadcsvsettings: Optional[Dict]
     __xslparameter: Dict
     __xsldefaultparameter: Dict
+    __xmltransformer: etree.XSLT
 
     def __init__(
             self,
